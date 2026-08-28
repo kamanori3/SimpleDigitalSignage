@@ -43,8 +43,9 @@ public class SettingsService
       Normalize(settings);
       return settings;
     }
-    catch
+    catch (Exception ex)
     {
+      WriteLoadError(ex);
       return CreateDefaults();
     }
   }
@@ -59,6 +60,20 @@ public class SettingsService
   private static AppSettings CreateDefaults()
   {
     return new AppSettings();
+  }
+
+  private static void WriteLoadError(Exception ex)
+  {
+    try
+    {
+      var errorPath = Path.Combine(AppContext.BaseDirectory, "settings_load_error.log");
+      var message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} 設定読込失敗: {ex.Message}{Environment.NewLine}";
+      File.AppendAllText(errorPath, message);
+    }
+    catch
+    {
+      // ログ出力に失敗しても起動は継続する
+    }
   }
 
   private static void Normalize(AppSettings settings)
