@@ -53,6 +53,8 @@ public sealed class ApplicationContext
     logger.Info($"監視フォルダ（実際）: {resolvedWatchFolder}");
     logger.Info($"ログフォルダ: {logDirectory}");
 
+    WindowsAutoStartService.Apply(settings.WindowsAutoStart, logger);
+
     Current = context;
     return context;
   }

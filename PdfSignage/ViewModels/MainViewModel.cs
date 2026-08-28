@@ -33,6 +33,7 @@ public class MainViewModel : ViewModelBase, IDisposable
   private bool _hasSlides;
   private bool _isRecoveryMessage;
   private string _emptyMessage = "";
+  private string _recoveryMessage = "";
 
   public MainViewModel(ApplicationContext context)
   {
@@ -120,6 +121,12 @@ public class MainViewModel : ViewModelBase, IDisposable
   {
     get => _emptyMessage;
     private set => SetProperty(ref _emptyMessage, value);
+  }
+
+  public string RecoveryMessage
+  {
+    get => _recoveryMessage;
+    private set => SetProperty(ref _recoveryMessage, value);
   }
 
   /// <summary>
@@ -358,7 +365,7 @@ public class MainViewModel : ViewModelBase, IDisposable
     HasSlides = false;
     CurrentImage = null;
     IsRecoveryMessage = true;
-    EmptyMessage = _context.Settings.RecoveryMessage;
+    RecoveryMessage = _context.Settings.RecoveryMessage;
     _context.Logger.Error(logMessage);
   }
 
@@ -467,6 +474,11 @@ public class MainViewModel : ViewModelBase, IDisposable
     _folderWatcher.ContentChanged += OnFolderContentChanged;
 
     _playlistReloadPending = false;
+    if (IsRecoveryMessage)
+    {
+      RecoveryMessage = _context.Settings.RecoveryMessage;
+    }
+
     ApplyPlaylistReload(preferredNextSlide: null, startIndex: 0);
     RestartTimerForCurrentSlide();
     _context.Logger.Info("スライドショーへ設定を反映しました。");

@@ -56,7 +56,7 @@
                            FontSize="11"
                            Foreground="Gray"
                            TextWrapping="Wrap"
-                           Text="※ レジストリへの登録は Phase 9 で実装予定。現時点では settings.json に保存されます。" />
+                           Text="※ レジストリ（Run キー）に登録します。ログオン後に自動起動します。" />
 
                 <TextBlock Text="アプリ終了時刻（日次）"
                            FontWeight="SemiBold" />
@@ -93,11 +93,16 @@
                                Foreground="Gray"
                                Text="HH:mm（アプリ終了の3分後が初期値、例: 18:03）" />
                 </StackPanel>
+                <TextBlock Margin="0,0,0,4"
+                           FontSize="11"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="※ 指定時刻に shutdown /s /t 0 を実行します。グループポリシー等により失敗する場合はログを確認してください。" />
                 <TextBlock Margin="0,0,0,16"
                            FontSize="11"
                            Foreground="Gray"
                            TextWrapping="Wrap"
-                           Text="※ 時刻スケジュールの実行は Phase 9 で実装予定。現時点では settings.json に保存されます。" />
+                           Text="※ 管理者権限は通常不要ですが、環境によっては電源オフが拒否されることがあります。" />
 
                 <TextBlock Text="復帰不能時メッセージ"
                            FontWeight="SemiBold" />

@@ -10,6 +10,7 @@ public partial class MainWindow : Window
 {
   private readonly MainViewModel _viewModel;
   private readonly KioskModeService _kioskMode = new();
+  private ScheduleService? _scheduleService;
   private AdminWindow? _adminWindow;
   private bool _isAdminMode;
   private bool _adminClosingForKioskReturn;
@@ -30,11 +31,26 @@ public partial class MainWindow : Window
     _kioskMode.Activate(this);
     Focus();
     Keyboard.Focus(this);
-    ApplicationContext.Current?.Logger.Info("キオスクモードを有効化しました。");
+
+    var context = ApplicationContext.Current!;
+    _scheduleService = new ScheduleService(context);
+    _scheduleService.AppExitRequested += OnScheduledAppExit;
+    _scheduleService.PcShutdownRequested += OnScheduledPcShutdown;
+    _scheduleService.Start();
+
+    context.Logger.Info("キオスクモードを有効化しました。");
   }
 
   private void OnClosed(object? sender, EventArgs e)
   {
+    if (_scheduleService is not null)
+    {
+      _scheduleService.AppExitRequested -= OnScheduledAppExit;
+      _scheduleService.PcShutdownRequested -= OnScheduledPcShutdown;
+      _scheduleService.Dispose();
+      _scheduleService = null;
+    }
+
     _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
     StopVideoPlayback();
     _adminWindow?.Close();
@@ -144,6 +160,21 @@ public partial class MainWindow : Window
     _isAdminMode = false;
     ApplicationContext.Current?.Logger.Info("アプリを終了します（管理モード）。");
     Application.Current.Shutdown();
+  }
+
+  private void OnScheduledAppExit()
+  {
+    ApplicationContext.Current?.Logger.Info("スケジュールによりアプリを終了します。");
+    Application.Current.Shutdown();
+  }
+
+  private void OnScheduledPcShutdown()
+  {
+    var logger = ApplicationContext.Current?.Logger;
+    if (logger is not null)
+    {
+      PcShutdownService.TryShutdown(logger);
+    }
   }
 
   private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
