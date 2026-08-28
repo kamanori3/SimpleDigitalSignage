@@ -1,10 +1,13 @@
 <#
 .SYNOPSIS
-    操作ガイド.md の内容をスライド化した PowerPoint ファイルを生成します。
+    docs/操作ガイド.md の内容をスライド化した PowerPoint ファイルを生成します。
 
 .DESCRIPTION
     PowerPoint (COM) を使って 16:9 のプレゼンテーションを組み立てます。
     実行には Microsoft PowerPoint のインストールが必要です。
+
+    スライドの本文はこのスクリプト内に直接記述しています。
+    docs/操作ガイド.md を更新したら、このスクリプトも合わせて更新して再生成してください。
 
 .EXAMPLE
     pwsh -File scripts/build-operation-guide-pptx.ps1
@@ -18,7 +21,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot '操作ガイド.pptx' }
+if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'docs/操作ガイド.pptx' }
 
 # ---------------------------------------------------------------- palette ---
 $C = @{
