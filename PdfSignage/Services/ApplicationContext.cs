@@ -9,9 +9,9 @@ public sealed class ApplicationContext
 {
   public static ApplicationContext? Current { get; private set; }
 
-  public AppSettings Settings { get; }
-  public string ResolvedWatchFolder { get; }
-  public string LogDirectory { get; }
+  public AppSettings Settings { get; private set; }
+  public string ResolvedWatchFolder { get; private set; }
+  public string LogDirectory { get; private set; }
   public FileLogger Logger { get; }
   public SettingsService SettingsService { get; }
 
@@ -55,5 +55,22 @@ public sealed class ApplicationContext
 
     Current = context;
     return context;
+  }
+
+  /// <summary>
+  /// 管理画面から保存された設定をランタイムへ反映する。
+  /// </summary>
+  public void ApplySettings(AppSettings settings)
+  {
+    Settings = settings;
+    ResolvedWatchFolder = PathHelper.ResolveWatchFolderPath(settings.WatchFolderPath);
+    LogDirectory = PathHelper.ResolveLogDirectory(settings.WatchFolderPath, ResolvedWatchFolder);
+
+    Directory.CreateDirectory(ResolvedWatchFolder);
+
+    Logger.Info($"設定反映: 監視フォルダ（設定）={settings.WatchFolderPath}");
+    Logger.Info($"設定反映: 監視フォルダ（実際）={ResolvedWatchFolder}");
+    Logger.Info($"設定反映: ログフォルダ={LogDirectory}");
+    Logger.Info($"設定反映: デフォルト表示秒数={settings.DefaultDisplaySeconds} 秒");
   }
 }

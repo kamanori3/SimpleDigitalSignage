@@ -23,6 +23,11 @@ public class FileLogger
     Write("ERROR", message);
   }
 
+  public void Warn(string message)
+  {
+    Write("WARN", message);
+  }
+
   private void Write(string level, string message)
   {
     var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}";
