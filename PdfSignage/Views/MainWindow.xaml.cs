@@ -168,8 +168,16 @@ public partial class MainWindow : Window
 
   private void VideoPlayer_MediaFailed(object sender, ExceptionRoutedEventArgs e)
   {
-    ApplicationContext.Current?.Logger.Error(
-      $"動画再生失敗: {e.ErrorException?.Message ?? "不明なエラー"}");
+    var logger = ApplicationContext.Current?.Logger;
+    if (e.ErrorException is not null)
+    {
+      logger?.Error("動画再生失敗", e.ErrorException);
+    }
+    else
+    {
+      logger?.Error("動画再生失敗: 不明なエラー");
+    }
+
     _viewModel.OnVideoEnded();
   }
 

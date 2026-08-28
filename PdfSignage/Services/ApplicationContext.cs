@@ -67,6 +67,8 @@ public sealed class ApplicationContext
     LogDirectory = PathHelper.ResolveLogDirectory(settings.WatchFolderPath, ResolvedWatchFolder);
 
     Directory.CreateDirectory(ResolvedWatchFolder);
+    Directory.CreateDirectory(LogDirectory);
+    Logger.SetLogDirectory(LogDirectory);
 
     Logger.Info($"設定反映: 監視フォルダ（設定）={settings.WatchFolderPath}");
     Logger.Info($"設定反映: 監視フォルダ（実際）={ResolvedWatchFolder}");

@@ -31,6 +31,7 @@ public class MainViewModel : ViewModelBase, IDisposable
   private Uri? _videoSource;
   private bool _isVideoVisible;
   private bool _hasSlides;
+  private bool _isRecoveryMessage;
   private string _emptyMessage = "";
 
   public MainViewModel(ApplicationContext context)
@@ -88,6 +89,8 @@ public class MainViewModel : ViewModelBase, IDisposable
       {
         OnPropertyChanged(nameof(ShowEmptyMessage));
         OnPropertyChanged(nameof(ShowImage));
+        OnPropertyChanged(nameof(ShowRecoveryMessage));
+        OnPropertyChanged(nameof(ShowEmptyFolderMessage));
       }
     }
   }
@@ -95,6 +98,23 @@ public class MainViewModel : ViewModelBase, IDisposable
   public bool ShowImage => HasSlides && !IsVideoVisible;
 
   public bool ShowEmptyMessage => !HasSlides;
+
+  public bool ShowRecoveryMessage => !HasSlides && IsRecoveryMessage;
+
+  public bool ShowEmptyFolderMessage => !HasSlides && !IsRecoveryMessage;
+
+  public bool IsRecoveryMessage
+  {
+    get => _isRecoveryMessage;
+    private set
+    {
+      if (SetProperty(ref _isRecoveryMessage, value))
+      {
+        OnPropertyChanged(nameof(ShowRecoveryMessage));
+        OnPropertyChanged(nameof(ShowEmptyFolderMessage));
+      }
+    }
+  }
 
   public string EmptyMessage
   {
@@ -136,6 +156,7 @@ public class MainViewModel : ViewModelBase, IDisposable
     ClearVideoState();
 
     var oldSlides = _slides;
+    var contentFiles = ContentFolderScanner.Scan(_context.ResolvedWatchFolder);
     _slides = _playlistBuilder
       .Build(_context.ResolvedWatchFolder, _renderWidth, _renderHeight)
       .ToList();
@@ -145,9 +166,19 @@ public class MainViewModel : ViewModelBase, IDisposable
       _currentIndex = 0;
       HasSlides = false;
       CurrentImage = null;
-      EmptyMessage = "表示するコンテンツがありません\n\n" +
-                     $"フォルダ: {_context.ResolvedWatchFolder}";
-      _context.Logger.Info("表示対象のコンテンツが見つかりませんでした。");
+
+      if (contentFiles.Count > 0)
+      {
+        ShowRecoveryState("コンテンツファイルは存在しますが、すべて読み込みに失敗しました。");
+      }
+      else
+      {
+        IsRecoveryMessage = false;
+        EmptyMessage = "表示するコンテンツがありません\n\n" +
+                       $"フォルダ: {_context.ResolvedWatchFolder}";
+        _context.Logger.Info("表示対象のコンテンツが見つかりませんでした。");
+      }
+
       return;
     }
 
@@ -310,7 +341,7 @@ public class MainViewModel : ViewModelBase, IDisposable
       }
       catch (Exception ex)
       {
-        _context.Logger.Error($"スライド読込失敗: {slide.GetDisplayName()} - {ex.Message}");
+        _context.Logger.Error($"スライド読込失敗: {slide.GetDisplayName()}", ex);
         ClearVideoState();
         CurrentImage = null;
         _currentIndex = (_currentIndex + 1) % _slides.Count;
@@ -318,11 +349,17 @@ public class MainViewModel : ViewModelBase, IDisposable
       }
     }
 
+    ShowRecoveryState("すべてのスライドの読み込みに失敗しました。");
+  }
+
+  private void ShowRecoveryState(string logMessage)
+  {
     ClearVideoState();
     HasSlides = false;
     CurrentImage = null;
+    IsRecoveryMessage = true;
     EmptyMessage = _context.Settings.RecoveryMessage;
-    _context.Logger.Error("すべてのスライドの読み込みに失敗しました。");
+    _context.Logger.Error(logMessage);
   }
 
   private void ShowVideoSlide(Slide slide, long transitionStarted)
