@@ -8,11 +8,23 @@ using PdfSignage.Services;
 namespace PdfSignage.ViewModels;
 
 /// <summary>
-/// メイン画面の ViewModel。スライドショーの進行を制御する。
+/// メイン画面（キオスク）の ViewModel。スライドショー進行の中核。
+/// <para>
+/// 責務の範囲:
+/// プレイリスト構築・現在スライドの表示切替・フォルダ変更の遅延反映・
+/// 空フォルダ / 復帰不能の表示状態。キオスク枠やスケジュールは <c>MainWindow</c> 側。
+/// </para>
+/// <para>
+/// 進行の起点は 2 系統:
+/// 画像・PDF は <see cref="DispatcherTimer"/>、動画は View からの <see cref="OnVideoEnded"/>。
+/// フォルダ変更は即リロードせず、次のスライド送りまで待つ（ADR 0003）。
+/// </para>
 /// </summary>
 public class MainViewModel : ViewModelBase, IDisposable
 {
+  /// <summary>スライド切替の性能目標（ms）。超過すると WARN ログ。</summary>
   private const int TransitionTargetMilliseconds = 3000;
+
   private readonly ApplicationContext _context;
   private readonly PdfRenderer _pdfRenderer;
   private PlaylistBuilder _playlistBuilder;
@@ -25,13 +37,24 @@ public class MainViewModel : ViewModelBase, IDisposable
 
   private List<Slide> _slides = [];
   private int _currentIndex = 0;
+
+  /// <summary>
+  /// フォルダ変更を検知済みで、次の <see cref="AdvanceToNextSlide"/> 時に再構築するフラグ。
+  /// 表示中スライドは中断しない。
+  /// </summary>
   private bool _playlistReloadPending;
 
   private ImageSource? _currentImage;
   private Uri? _videoSource;
   private bool _isVideoVisible;
   private bool _hasSlides;
+
+  /// <summary>
+  /// true = 復帰不能画面、false かつ <see cref="HasSlides"/> が false = 空フォルダ画面。
+  /// 両者は別状態（運用ガイド「画面に出るメッセージの見分け方」）。
+  /// </summary>
   private bool _isRecoveryMessage;
+
   private string _emptyMessage = "";
   private string _recoveryMessage = "";
 
@@ -56,6 +79,8 @@ public class MainViewModel : ViewModelBase, IDisposable
     ReloadPlaylist();
     RestartTimerForCurrentSlide();
   }
+
+  // --- バインド用プロパティ（表示の 3 状態は HasSlides × IsRecoveryMessage で決まる） ---
 
   public ImageSource? CurrentImage
   {
@@ -130,7 +155,8 @@ public class MainViewModel : ViewModelBase, IDisposable
   }
 
   /// <summary>
-  /// 動画再生完了時に View から呼び出す。
+  /// 動画再生完了（または MediaFailed）時に View から呼び出す。
+  /// タイマーは動画中停止しているため、ここが次スライドへの唯一の入口。
   /// </summary>
   public void OnVideoEnded()
   {
@@ -142,6 +168,10 @@ public class MainViewModel : ViewModelBase, IDisposable
     AdvanceToNextSlide();
   }
 
+  /// <summary>
+  /// 監視フォルダ変更。即リロードせず pending のみ立てる（ADR 0003）。
+  /// FileSystemWatcher はワーカースレッドから来るため UI スレッドへ marshal する。
+  /// </summary>
   private void OnFolderContentChanged()
   {
     Application.Current.Dispatcher.BeginInvoke(() =>
@@ -151,13 +181,20 @@ public class MainViewModel : ViewModelBase, IDisposable
     });
   }
 
+  /// <summary>起動時・空フォルダポーリング用。常に先頭から構築する。</summary>
   private void ReloadPlaylist()
   {
     ApplyPlaylistReload(preferredNextSlide: null, startIndex: 0);
   }
 
+  /// <summary>
+  /// プレイリストを再構築して表示を再開する。
+  /// <paramref name="startIndex"/> 指定時はその位置、未指定時は
+  /// <paramref name="preferredNextSlide"/> を手がかりに位置を復元する。
+  /// </summary>
   private void ApplyPlaylistReload(Slide? preferredNextSlide, int? startIndex = null)
   {
+    // 差し替えられた PDF の古いページが残らないよう、キャッシュと先読みを破棄する
     _preloader.Cancel();
     _pdfRenderer.ClearCache();
     ClearVideoState();
@@ -174,6 +211,7 @@ public class MainViewModel : ViewModelBase, IDisposable
       HasSlides = false;
       CurrentImage = null;
 
+      // ファイルはあるが Build で全部落ちた → 復帰不能。無いだけ → 空フォルダ（正常）
       if (contentFiles.Count > 0)
       {
         ShowRecoveryState("コンテンツファイルは存在しますが、すべて読み込みに失敗しました。");
@@ -197,6 +235,12 @@ public class MainViewModel : ViewModelBase, IDisposable
     ShowCurrentSlideOrSkip();
   }
 
+  /// <summary>
+  /// 再構築後の再生位置を決める。差し替えで先頭へ巻き戻さないための処理。
+  /// 1) preferred が新リストにあればそこ
+  /// 2) 無ければ旧リスト上で preferred 以降→先頭側の順に、新リストに残る最初のスライド
+  /// 3) どれも無ければ 0
+  /// </summary>
   private static int ResolveIndexAfterReload(
     IReadOnlyList<Slide> oldSlides,
     IReadOnlyList<Slide> newSlides,
@@ -248,6 +292,7 @@ public class MainViewModel : ViewModelBase, IDisposable
     return 0;
   }
 
+  /// <summary>FilePath + PageIndex で同一スライドを探す（PDF はページ単位）。</summary>
   private static int FindSlideIndex(IReadOnlyList<Slide> slides, string filePath, int pageIndex)
   {
     for (var i = 0; i < slides.Count; i++)
@@ -263,10 +308,15 @@ public class MainViewModel : ViewModelBase, IDisposable
     return -1;
   }
 
+  /// <summary>
+  /// 現在スライド向けにタイマーを張り直す。
+  /// 動画は MediaEnded 待ちなので停止。スライド 0 件時は空フォルダ復帰用のポーリング間隔にする。
+  /// </summary>
   private void RestartTimerForCurrentSlide()
   {
     if (_slides.Count == 0)
     {
+      // FileSystemWatcher 取りこぼしでも空→有コンテンツへ戻れるよう定期再スキャンする
       _timer.Interval = TimeSpan.FromSeconds(_context.Settings.DefaultDisplaySeconds);
       _timer.Stop();
       _timer.Start();
@@ -298,6 +348,9 @@ public class MainViewModel : ViewModelBase, IDisposable
     AdvanceToNextSlide();
   }
 
+  /// <summary>
+  /// 次スライドへ進む。pending があれば「次に出るはずだったスライド」を手がかりに再構築する。
+  /// </summary>
   private void AdvanceToNextSlide()
   {
     if (_slides.Count == 0)
@@ -320,6 +373,9 @@ public class MainViewModel : ViewModelBase, IDisposable
     RestartTimerForCurrentSlide();
   }
 
+  /// <summary>
+  /// 現在インデックスを表示する。失敗したら次へスキップし、一周全滅なら復帰不能へ。
+  /// </summary>
   private void ShowCurrentSlideOrSkip()
   {
     if (_slides.Count == 0)
@@ -359,6 +415,7 @@ public class MainViewModel : ViewModelBase, IDisposable
     ShowRecoveryState("すべてのスライドの読み込みに失敗しました。");
   }
 
+  /// <summary>設定の RecoveryMessage を全面表示する異常状態。</summary>
   private void ShowRecoveryState(string logMessage)
   {
     ClearVideoState();
@@ -376,6 +433,7 @@ public class MainViewModel : ViewModelBase, IDisposable
       throw new FileNotFoundException("動画ファイルが見つかりません。", slide.FilePath);
     }
 
+    // 動画はタイマー進行しない。失敗時も View 側 MediaFailed → OnVideoEnded で進む
     _timer.Stop();
     _preloader.Cancel();
 
@@ -400,6 +458,10 @@ public class MainViewModel : ViewModelBase, IDisposable
     QueuePreloadNextSlide();
   }
 
+  /// <summary>
+  /// 切替所要時間をログする。受け入れテストの性能確認が
+  /// 「スライド切替: ... (Nms)」形式に依存しているので文言を変えないこと。
+  /// </summary>
   private void LogTransition(Slide slide, long transitionStarted)
   {
     var elapsedMs = Stopwatch.GetElapsedTime(transitionStarted).TotalMilliseconds;
@@ -460,6 +522,8 @@ public class MainViewModel : ViewModelBase, IDisposable
 
   /// <summary>
   /// 管理画面から保存された設定を実行中のスライドショーへ反映する。
+  /// 監視フォルダ・秒数の変更に合わせ PlaylistBuilder / Watcher を作り直し、
+  /// 再生位置は常に先頭へ戻す（フォルダ自体が変わりうるため）。
   /// </summary>
   public void ApplySettings()
   {
