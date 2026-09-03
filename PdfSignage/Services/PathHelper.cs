@@ -8,7 +8,9 @@ public static class PathHelper
   /// </summary>
   public static string GetLogDirectory(string watchFolderPath)
   {
-    var fullPath = Path.GetFullPath(watchFolderPath);
+    // 末尾の区切り文字が残っていると GetParent が監視フォルダ自身を返し、
+    // logs が監視フォルダの内側に作られてしまう
+    var fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(watchFolderPath));
     var parent = Directory.GetParent(fullPath);
 
     if (parent is null)
