@@ -1,5 +1,8 @@
 {
   "watchFolderPath": "D:\\Signage",
+  "googleDriveFolderUrl": "",
+  "googleDriveApiKey": "",
+  "googleDriveSyncIntervalMinutes": 5,
   "defaultDisplaySeconds": 15,
   "windowsAutoStart": false,
   "appExitTime": null,

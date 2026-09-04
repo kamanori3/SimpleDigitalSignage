@@ -16,6 +16,7 @@ public partial class App : Application
   private void OnApplicationExit(object sender, EventArgs e)
   {
     TaskbarController.ForceRestore();
+    ApplicationContext.Current?.Dispose();
     AppSelfRestartService.ReleaseSingleInstance();
   }
 

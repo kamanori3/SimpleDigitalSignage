@@ -11,7 +11,8 @@
 ### 追加
 
 - 設計書（`docs/設計書.md`）
-- 設計判断記録（`docs/adr/`）8 件
+- 設計判断記録（`docs/adr/`）9 件
+- Google Drive 公開フォルダのキャッシュ同期（管理画面にフォルダ URL と API キー）
 - 課金方針と競合比較（`docs/課金方針.md`、`docs/競合比較.md`）
 - 純粋ロジックのユニットテストプロジェクト（`PdfSignage.Tests`、78 件）とソリューションファイル（`SimpleDigitalSignage.sln`）
 - 操作ガイドのスライド版（`docs/操作ガイド.pptx`）と生成スクリプト（`scripts/build-operation-guide-pptx.ps1`）

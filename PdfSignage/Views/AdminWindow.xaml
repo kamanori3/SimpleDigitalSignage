@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding WindowTitle}"
         Width="640"
-        Height="680"
-        MinHeight="560"
+        Height="760"
+        MinHeight="600"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
     <Grid Margin="24">
@@ -34,13 +34,47 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
-                             Text="{Binding WatchFolderPath, UpdateSourceTrigger=PropertyChanged}" />
+                             Text="{Binding WatchFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                             IsEnabled="{Binding IsWatchFolderEnabled}" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
                             Padding="12,6"
                             Content="参照..."
-                            Command="{Binding BrowseWatchFolderCommand}" />
+                            Command="{Binding BrowseWatchFolderCommand}"
+                            IsEnabled="{Binding IsWatchFolderEnabled}" />
                 </Grid>
+                <TextBlock Margin="0,-8,0,16"
+                           FontSize="11"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="Google Drive フォルダ URL を指定しているときは使いません。" />
+
+                <TextBlock Text="Google Drive フォルダ URL（任意）"
+                           FontWeight="SemiBold" />
+                <TextBox Margin="0,6,0,4"
+                         Text="{Binding GoogleDriveFolderUrl, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,0,0,12"
+                           FontSize="11"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="フォルダを「リンクを知っている全員が閲覧可」にして URL を貼ります。直下の JPEG / PDF / MP4 をキャッシュへ同期します。空なら上の監視フォルダを使います。" />
+
+                <TextBlock Text="Google Drive API キー"
+                           FontWeight="SemiBold" />
+                <TextBox Margin="0,6,0,4"
+                         Text="{Binding GoogleDriveApiKey, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,0,0,12"
+                           FontSize="11"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="Google Cloud で Drive API を有効化した API キーです。フォルダ URL を使うときに必須です。" />
+
+                <TextBlock Text="Drive 同期間隔（分、1〜60）"
+                           FontWeight="SemiBold" />
+                <TextBox Margin="0,6,0,16"
+                         Width="120"
+                         HorizontalAlignment="Left"
+                         Text="{Binding GoogleDriveSyncIntervalMinutesText, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBlock Text="デフォルト表示秒数（5〜300）"
                            FontWeight="SemiBold" />

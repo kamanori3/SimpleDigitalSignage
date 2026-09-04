@@ -19,9 +19,35 @@ public static partial class SettingsValidator
     bool pcShutdownTimeEnabled,
     string pcShutdownTime,
     string recoveryMessage,
+    string googleDriveFolderUrl,
+    string googleDriveApiKey,
+    int googleDriveSyncIntervalMinutes,
     out string errorMessage)
   {
-    if (string.IsNullOrWhiteSpace(watchFolderPath))
+    var driveUrl = googleDriveFolderUrl.Trim();
+    if (!string.IsNullOrEmpty(driveUrl))
+    {
+      if (!DriveFolderUrlParser.TryParseFolderId(driveUrl, out _))
+      {
+        errorMessage = "Google Drive のフォルダ URL を入力してください（ファイルのリンクは使えません）。";
+        return false;
+      }
+
+      if (string.IsNullOrWhiteSpace(googleDriveApiKey))
+      {
+        errorMessage = "Google Drive を使う場合は API キーを入力してください。";
+        return false;
+      }
+
+      if (googleDriveSyncIntervalMinutes is < AppSettings.MinGoogleDriveSyncIntervalMinutes
+          or > AppSettings.MaxGoogleDriveSyncIntervalMinutes)
+      {
+        errorMessage =
+          $"Drive の同期間隔は {AppSettings.MinGoogleDriveSyncIntervalMinutes}〜{AppSettings.MaxGoogleDriveSyncIntervalMinutes} 分で入力してください。";
+        return false;
+      }
+    }
+    else if (string.IsNullOrWhiteSpace(watchFolderPath))
     {
       errorMessage = "監視フォルダを入力してください。";
       return false;

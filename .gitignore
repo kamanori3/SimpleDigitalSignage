@@ -24,3 +24,4 @@ Desktop.ini
 PdfSignage/settings.json
 PdfSignage/SignageData/*
 !PdfSignage/SignageData/.gitkeep
+PdfSignage/DriveCache/

@@ -219,8 +219,12 @@ public class MainViewModel : ViewModelBase, IDisposable
       else
       {
         IsRecoveryMessage = false;
-        EmptyMessage = "表示するコンテンツがありません\n\n" +
-                       $"フォルダ: {_context.ResolvedWatchFolder}";
+        EmptyMessage = _context.Settings.UsesGoogleDrive
+          ? "Google Drive から同期しています\n\n"
+            + "フォルダを「リンクを知っている全員が閲覧可」にし、Wi-Fi と API キーを確認してください。\n"
+            + $"キャッシュ: {_context.ResolvedWatchFolder}"
+          : "表示するコンテンツがありません\n\n" +
+            $"フォルダ: {_context.ResolvedWatchFolder}";
         _context.Logger.Info("表示対象のコンテンツが見つかりませんでした。");
       }
 

@@ -37,6 +37,14 @@ public class PathHelperTests
   }
 
   [Fact]
+  public void Driveキャッシュは実行ファイルの横()
+  {
+    Assert.Equal(
+      System.IO.Path.Combine(AppContext.BaseDirectory, "DriveCache"),
+      PathHelper.GetDriveCacheDirectory());
+  }
+
+  [Fact]
   public void 開発用フォルダは実行ファイルの横()
   {
     Assert.Equal(

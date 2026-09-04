@@ -83,6 +83,14 @@ public class SettingsService
       AppSettings.MinDisplaySeconds,
       AppSettings.MaxDisplaySeconds);
 
+    settings.GoogleDriveSyncIntervalMinutes = Math.Clamp(
+      settings.GoogleDriveSyncIntervalMinutes,
+      AppSettings.MinGoogleDriveSyncIntervalMinutes,
+      AppSettings.MaxGoogleDriveSyncIntervalMinutes);
+
+    settings.GoogleDriveFolderUrl = settings.GoogleDriveFolderUrl.Trim();
+    settings.GoogleDriveApiKey = settings.GoogleDriveApiKey.Trim();
+
     if (string.IsNullOrWhiteSpace(settings.RecoveryMessage))
     {
       settings.RecoveryMessage = "表示を復旧しています";

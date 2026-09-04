@@ -1,3 +1,5 @@
+using PdfSignage.Models;
+
 namespace PdfSignage.Services;
 
 public static class PathHelper
@@ -42,6 +44,29 @@ public static class PathHelper
   public static string GetDevSignageDataPath()
   {
     return Path.Combine(AppContext.BaseDirectory, "SignageData");
+  }
+
+  /// <summary>
+  /// Google Drive 同期キャッシュ（exe 横の DriveCache）
+  /// </summary>
+  public static string GetDriveCacheDirectory()
+  {
+    return Path.Combine(AppContext.BaseDirectory, "DriveCache");
+  }
+
+  /// <summary>
+  /// 表示に使うフォルダ。Drive URL 指定時はキャッシュ、それ以外は監視フォルダ。
+  /// </summary>
+  public static string ResolveContentFolder(AppSettings settings)
+  {
+    if (settings.UsesGoogleDrive)
+    {
+      var cache = GetDriveCacheDirectory();
+      Directory.CreateDirectory(cache);
+      return cache;
+    }
+
+    return ResolveWatchFolderPath(settings.WatchFolderPath);
   }
 
   /// <summary>

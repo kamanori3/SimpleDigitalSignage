@@ -13,13 +13,19 @@ public class SettingsValidatorTests
     string appExitTime = "18:00",
     bool shutdownEnabled = false,
     string shutdownTime = "18:03",
-    string recoveryMessage = "表示を復旧しています")
+    string recoveryMessage = "表示を復旧しています",
+    string driveFolderUrl = "",
+    string driveApiKey = "",
+    int driveSyncMinutes = AppSettings.DefaultGoogleDriveSyncIntervalMinutes)
   {
     return SettingsValidator.TryValidate(
       watchFolder, seconds,
       appExitEnabled, appExitTime,
       shutdownEnabled, shutdownTime,
       recoveryMessage,
+      driveFolderUrl,
+      driveApiKey,
+      driveSyncMinutes,
       out error);
   }
 
@@ -76,6 +82,38 @@ public class SettingsValidatorTests
   {
     Assert.False(Validate(out var error, shutdownEnabled: true, shutdownTime: "24:00"));
     Assert.Contains("PC 電源オフ時刻", error);
+  }
+
+  [Fact]
+  public void DriveフォルダURLが不正なら無効()
+  {
+    Assert.False(Validate(
+      out var error,
+      watchFolder: "",
+      driveFolderUrl: "https://drive.google.com/file/d/abc/view",
+      driveApiKey: "key"));
+    Assert.Contains("フォルダ URL", error);
+  }
+
+  [Fact]
+  public void Drive利用時はAPIキーが必須()
+  {
+    Assert.False(Validate(
+      out var error,
+      watchFolder: "",
+      driveFolderUrl: "https://drive.google.com/drive/folders/abcdefghijklmnopqrstuvwx",
+      driveApiKey: ""));
+    Assert.Contains("API キー", error);
+  }
+
+  [Fact]
+  public void Drive利用時は監視フォルダが空でもよい()
+  {
+    Assert.True(Validate(
+      out _,
+      watchFolder: "",
+      driveFolderUrl: "https://drive.google.com/drive/folders/abcdefghijklmnopqrstuvwx",
+      driveApiKey: "test-key"));
   }
 
   [Fact]

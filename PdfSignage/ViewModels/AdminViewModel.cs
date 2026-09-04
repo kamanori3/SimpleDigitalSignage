@@ -17,6 +17,9 @@ public sealed class AdminViewModel : ViewModelBase
   private AppSettings _savedSettings = new();
 
   private string _watchFolderPath = "";
+  private string _googleDriveFolderUrl = "";
+  private string _googleDriveApiKey = "";
+  private string _googleDriveSyncIntervalMinutesText = "";
   private string _defaultDisplaySecondsText = "";
   private bool _windowsAutoStart;
   private bool _appExitTimeEnabled;
@@ -53,6 +56,32 @@ public sealed class AdminViewModel : ViewModelBase
     get => _watchFolderPath;
     set => SetProperty(ref _watchFolderPath, value);
   }
+
+  public string GoogleDriveFolderUrl
+  {
+    get => _googleDriveFolderUrl;
+    set
+    {
+      if (SetProperty(ref _googleDriveFolderUrl, value))
+      {
+        OnPropertyChanged(nameof(IsWatchFolderEnabled));
+      }
+    }
+  }
+
+  public string GoogleDriveApiKey
+  {
+    get => _googleDriveApiKey;
+    set => SetProperty(ref _googleDriveApiKey, value);
+  }
+
+  public string GoogleDriveSyncIntervalMinutesText
+  {
+    get => _googleDriveSyncIntervalMinutesText;
+    set => SetProperty(ref _googleDriveSyncIntervalMinutesText, value);
+  }
+
+  public bool IsWatchFolderEnabled => string.IsNullOrWhiteSpace(GoogleDriveFolderUrl);
 
   public string DefaultDisplaySecondsText
   {
@@ -149,6 +178,9 @@ public sealed class AdminViewModel : ViewModelBase
   {
     _savedSettings = CloneSettings(settings);
     WatchFolderPath = settings.WatchFolderPath;
+    GoogleDriveFolderUrl = settings.GoogleDriveFolderUrl;
+    GoogleDriveApiKey = settings.GoogleDriveApiKey;
+    GoogleDriveSyncIntervalMinutesText = settings.GoogleDriveSyncIntervalMinutes.ToString();
     DefaultDisplaySecondsText = settings.DefaultDisplaySeconds.ToString();
     WindowsAutoStart = settings.WindowsAutoStart;
     AppExitTimeEnabled = !string.IsNullOrWhiteSpace(settings.AppExitTime);
@@ -291,6 +323,17 @@ public sealed class AdminViewModel : ViewModelBase
       return false;
     }
 
+    if (!int.TryParse(GoogleDriveSyncIntervalMinutesText.Trim(), out var driveSyncMinutes))
+    {
+      if (requireValid)
+      {
+        HasValidationError = true;
+        StatusMessage = "Drive の同期間隔は整数（分）で入力してください。";
+      }
+
+      return false;
+    }
+
     if (requireValid && !SettingsValidator.TryValidate(
           WatchFolderPath.Trim(),
           defaultDisplaySeconds,
@@ -299,6 +342,9 @@ public sealed class AdminViewModel : ViewModelBase
           PcShutdownTimeEnabled,
           PcShutdownTime,
           RecoveryMessage,
+          GoogleDriveFolderUrl,
+          GoogleDriveApiKey,
+          driveSyncMinutes,
           out var errorMessage))
     {
       HasValidationError = true;
@@ -306,7 +352,12 @@ public sealed class AdminViewModel : ViewModelBase
       return false;
     }
 
-    settings.WatchFolderPath = WatchFolderPath.Trim();
+    settings.WatchFolderPath = string.IsNullOrWhiteSpace(WatchFolderPath)
+      ? "D:\\Signage"
+      : WatchFolderPath.Trim();
+    settings.GoogleDriveFolderUrl = GoogleDriveFolderUrl.Trim();
+    settings.GoogleDriveApiKey = GoogleDriveApiKey.Trim();
+    settings.GoogleDriveSyncIntervalMinutes = driveSyncMinutes;
     settings.DefaultDisplaySeconds = defaultDisplaySeconds;
     settings.WindowsAutoStart = WindowsAutoStart;
     settings.AppExitTime = AppExitTimeEnabled
@@ -322,6 +373,9 @@ public sealed class AdminViewModel : ViewModelBase
   private static bool SettingsEquals(AppSettings left, AppSettings right)
   {
     return left.WatchFolderPath == right.WatchFolderPath
+           && left.GoogleDriveFolderUrl == right.GoogleDriveFolderUrl
+           && left.GoogleDriveApiKey == right.GoogleDriveApiKey
+           && left.GoogleDriveSyncIntervalMinutes == right.GoogleDriveSyncIntervalMinutes
            && left.DefaultDisplaySeconds == right.DefaultDisplaySeconds
            && left.WindowsAutoStart == right.WindowsAutoStart
            && left.AppExitTime == right.AppExitTime
@@ -334,6 +388,9 @@ public sealed class AdminViewModel : ViewModelBase
     return new AppSettings
     {
       WatchFolderPath = source.WatchFolderPath,
+      GoogleDriveFolderUrl = source.GoogleDriveFolderUrl,
+      GoogleDriveApiKey = source.GoogleDriveApiKey,
+      GoogleDriveSyncIntervalMinutes = source.GoogleDriveSyncIntervalMinutes,
       DefaultDisplaySeconds = source.DefaultDisplaySeconds,
       WindowsAutoStart = source.WindowsAutoStart,
       AppExitTime = source.AppExitTime,
