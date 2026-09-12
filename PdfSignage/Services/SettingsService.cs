@@ -87,5 +87,9 @@ public class SettingsService
     {
       settings.RecoveryMessage = "表示を復旧しています";
     }
+
+    settings.AccessKey = string.IsNullOrWhiteSpace(settings.AccessKey)
+      ? ""
+      : settings.AccessKey.Trim();
   }
 }

@@ -57,6 +57,8 @@ public class MainViewModel : ViewModelBase, IDisposable
 
   private string _emptyMessage = "";
   private string _recoveryMessage = "";
+  private bool _showLicenseBanner;
+  private string _licenseBannerMessage = "";
 
   public MainViewModel(ApplicationContext context)
   {
@@ -78,6 +80,7 @@ public class MainViewModel : ViewModelBase, IDisposable
 
     ReloadPlaylist();
     RestartTimerForCurrentSlide();
+    RefreshLicenseBanner();
   }
 
   // --- バインド用プロパティ（表示の 3 状態は HasSlides × IsRecoveryMessage で決まる） ---
@@ -152,6 +155,18 @@ public class MainViewModel : ViewModelBase, IDisposable
   {
     get => _recoveryMessage;
     private set => SetProperty(ref _recoveryMessage, value);
+  }
+
+  public bool ShowLicenseBanner
+  {
+    get => _showLicenseBanner;
+    private set => SetProperty(ref _showLicenseBanner, value);
+  }
+
+  public string LicenseBannerMessage
+  {
+    get => _licenseBannerMessage;
+    private set => SetProperty(ref _licenseBannerMessage, value);
   }
 
   /// <summary>
@@ -554,7 +569,18 @@ public class MainViewModel : ViewModelBase, IDisposable
 
     ApplyPlaylistReload(preferredNextSlide: null, startIndex: 0);
     RestartTimerForCurrentSlide();
+    RefreshLicenseBanner();
     _context.Logger.Info("スライドショーへ設定を反映しました。");
+  }
+
+  /// <summary>
+  /// 課金状態に合わせてキオスク下端の更新案内を出し入れする。再生は止めない。
+  /// </summary>
+  public void RefreshLicenseBanner()
+  {
+    var show = _context.License.ShowRenewalBanner;
+    ShowLicenseBanner = show;
+    LicenseBannerMessage = show ? LicenseService.RenewalBannerMessage : "";
   }
 
   public void Dispose()

@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding WindowTitle}"
         Width="640"
-        Height="680"
-        MinHeight="560"
+        Height="760"
+        MinHeight="600"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
     <Grid Margin="24">
@@ -130,6 +130,50 @@
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          Text="{Binding RecoveryMessage, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Margin="0,16,0,0"
+                           Text="ライセンス"
+                           FontWeight="SemiBold" />
+                <StackPanel Margin="0,6,0,16">
+                    <TextBlock FontSize="14"
+                               Text="{Binding LicenseStatusText}" />
+                    <TextBlock Margin="0,4,0,0"
+                               FontSize="12"
+                               Foreground="Gray"
+                               TextWrapping="Wrap"
+                               Text="{Binding LicenseDetailText}" />
+                </StackPanel>
+
+                <TextBlock Text="アクセスキー"
+                           FontWeight="SemiBold" />
+                <StackPanel Margin="0,6,0,16">
+                    <TextBox MinHeight="48"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="False"
+                             VerticalScrollBarVisibility="Auto"
+                             Text="{Binding AccessKeyInput, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Margin="0,8,0,0"
+                            Padding="12,6"
+                            HorizontalAlignment="Left"
+                            Content="アクセスキーを適用"
+                            Command="{Binding ApplyAccessKeyCommand}" />
+                    <TextBlock Margin="0,4,0,0"
+                               FontSize="11"
+                               Foreground="Gray"
+                               TextWrapping="Wrap"
+                               Text="メールで届いたアクセスキーを貼り付けて適用します。空のまま保存すると、いまのキーを維持します。" />
+                </StackPanel>
+
+                <TextBlock Text="ログフォルダ"
+                           FontWeight="SemiBold" />
+                <TextBox Margin="0,6,0,0"
+                         IsReadOnly="True"
+                         Text="{Binding LogDirectory, Mode=OneWay}" />
+                <TextBlock Margin="0,4,0,0"
+                           FontSize="11"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="障害時は、このフォルダのログをメールに添付してください。クラウドには送りません。" />
             </StackPanel>
         </ScrollViewer>
 

@@ -28,4 +28,9 @@ public class AppSettings
   public string? PcShutdownTime { get; set; }
 
   public string RecoveryMessage { get; set; } = "表示を復旧しています";
+
+  /// <summary>
+  /// 署名付きアクセスキー。未入力は空文字。試用開始日はここには置かない（ADR 0013）。
+  /// </summary>
+  public string AccessKey { get; set; } = "";
 }

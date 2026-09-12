@@ -1,3 +1,4 @@
+using PdfSignage.Licensing;
 using PdfSignage.Models;
 
 namespace PdfSignage.Services;
@@ -14,19 +15,22 @@ public sealed class ApplicationContext
   public string LogDirectory { get; private set; }
   public FileLogger Logger { get; }
   public SettingsService SettingsService { get; }
+  public LicenseEvaluation License { get; private set; }
 
   private ApplicationContext(
     AppSettings settings,
     string resolvedWatchFolder,
     string logDirectory,
     FileLogger logger,
-    SettingsService settingsService)
+    SettingsService settingsService,
+    LicenseEvaluation license)
   {
     Settings = settings;
     ResolvedWatchFolder = resolvedWatchFolder;
     LogDirectory = logDirectory;
     Logger = logger;
     SettingsService = settingsService;
+    License = license;
   }
 
   public static ApplicationContext Initialize()
@@ -42,12 +46,14 @@ public sealed class ApplicationContext
     Directory.CreateDirectory(logDirectory);
 
     var logger = new FileLogger(logDirectory);
+    var license = EvaluateLicenseSafely(settings.AccessKey, logger);
     var context = new ApplicationContext(
       settings,
       resolvedWatchFolder,
       logDirectory,
       logger,
-      settingsService);
+      settingsService,
+      license);
 
     logger.Info($"アプリケーション起動 (v{typeof(ApplicationContext).Assembly.GetName().Version})");
     logger.Info($"設定ファイル: {settingsService.SettingsFilePath}");
@@ -82,6 +88,36 @@ public sealed class ApplicationContext
     LogNetworkWatchFolderFallback(Logger, settings, ResolvedWatchFolder);
     Logger.Info($"設定反映: ログフォルダ={LogDirectory}");
     Logger.Info($"設定反映: デフォルト表示秒数={settings.DefaultDisplaySeconds} 秒");
+    RefreshLicense();
+  }
+
+  /// <summary>
+  /// 試用開始日とアクセスキーから課金状態を再計算する。失敗しても前回の状態を残す。
+  /// </summary>
+  public void RefreshLicense(DateOnly? today = null)
+  {
+    try
+    {
+      License = LicenseService.Evaluate(Settings.AccessKey, Logger, today);
+    }
+    catch (Exception ex)
+    {
+      Logger.Error("ライセンス状態の再計算に失敗しました。前回の状態を維持します。", ex);
+    }
+  }
+
+  private static LicenseEvaluation EvaluateLicenseSafely(string? accessKey, FileLogger logger)
+  {
+    try
+    {
+      return LicenseService.Evaluate(accessKey, logger);
+    }
+    catch (Exception ex)
+    {
+      logger.Error("ライセンス状態の判定に失敗したため、試用として起動します。", ex);
+      var today = DateOnly.FromDateTime(DateTime.Now);
+      return LicenseStateEvaluator.Evaluate(AccessKeyVerifyResult.Invalid, today, today);
+    }
   }
 
   private static void LogNetworkWatchFolderFallback(

@@ -51,5 +51,17 @@
                        TextWrapping="Wrap"
                        LineHeight="80" />
         </Border>
+
+        <Border VerticalAlignment="Bottom"
+                Background="#CC111111"
+                Padding="32,18"
+                Visibility="{Binding ShowLicenseBanner, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding LicenseBannerMessage}"
+                       Foreground="White"
+                       FontSize="22"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center" />
+        </Border>
     </Grid>
 </Window>

@@ -24,4 +24,8 @@
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PdfSignage.Licensing\PdfSignage.Licensing.csproj" />
+  </ItemGroup>
+
 </Project>

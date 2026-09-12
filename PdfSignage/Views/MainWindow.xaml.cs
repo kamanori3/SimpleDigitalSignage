@@ -208,6 +208,7 @@ public partial class MainWindow : Window
     Show();
     Activate();
     Keyboard.Focus(this);
+    _viewModel.RefreshLicenseBanner();
     ApplicationContext.Current?.Logger.Info("キオスクモードに戻りました（Ctrl+Shift+M）。");
   }
 
@@ -257,6 +258,8 @@ public partial class MainWindow : Window
   /// </summary>
   private void OnDateRolledOver()
   {
+    ApplicationContext.Current?.RefreshLicense();
+    _viewModel.RefreshLicenseBanner();
     _viewModel.RequestPlaylistReload();
   }
 
