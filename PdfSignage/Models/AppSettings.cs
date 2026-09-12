@@ -11,6 +11,12 @@ public class AppSettings
 
   public string WatchFolderPath { get; set; } = "D:\\Signage";
 
+  /// <summary>
+  /// true のときだけ UNC / ネットワークドライブを監視フォルダにできる。
+  /// 既定 false（スタンドアロン商品）。管理画面からは変更しない。
+  /// </summary>
+  public bool AllowNetworkWatchFolder { get; set; }
+
   public int DefaultDisplaySeconds { get; set; } = DefaultDisplaySecondsValue;
 
   public bool WindowsAutoStart { get; set; } = false;

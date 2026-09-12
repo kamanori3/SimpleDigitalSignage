@@ -25,8 +25,16 @@ public static class PathHelper
   /// 設定上の監視フォルダに基づいてログパスを算出する。
   /// 設定パスのドライブが存在しない開発環境では、実際の監視フォルダに基づく。
   /// </summary>
-  public static string ResolveLogDirectory(string configuredWatchFolder, string resolvedWatchFolder)
+  public static string ResolveLogDirectory(
+    string configuredWatchFolder,
+    string resolvedWatchFolder,
+    bool allowNetworkWatchFolder = false)
   {
+    if (!WatchFolderLocationPolicy.IsAllowedOnThisPc(configuredWatchFolder, allowNetworkWatchFolder))
+    {
+      return GetLogDirectory(resolvedWatchFolder);
+    }
+
     var configRoot = Path.GetPathRoot(Path.GetFullPath(configuredWatchFolder));
     if (configRoot is not null && !Directory.Exists(configRoot))
     {
@@ -47,8 +55,17 @@ public static class PathHelper
   /// <summary>
   /// 監視フォルダが存在しない場合、開発用パスへフォールバックする。
   /// </summary>
-  public static string ResolveWatchFolderPath(string configuredPath)
+  public static string ResolveWatchFolderPath(
+    string configuredPath,
+    bool allowNetworkWatchFolder = false)
   {
+    if (!WatchFolderLocationPolicy.IsAllowedOnThisPc(configuredPath, allowNetworkWatchFolder))
+    {
+      var rejectedPath = GetDevSignageDataPath();
+      Directory.CreateDirectory(rejectedPath);
+      return rejectedPath;
+    }
+
     if (Directory.Exists(configuredPath))
     {
       return Path.GetFullPath(configuredPath);

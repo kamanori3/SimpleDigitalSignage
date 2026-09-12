@@ -28,19 +28,37 @@
             <StackPanel>
                 <TextBlock Text="監視フォルダ"
                            FontWeight="SemiBold" />
-                <Grid Margin="0,6,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0"
-                             Text="{Binding WatchFolderPath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1"
-                            Margin="8,0,0,0"
-                            Padding="12,6"
-                            Content="参照..."
-                            Command="{Binding BrowseWatchFolderCommand}" />
-                </Grid>
+                <StackPanel Margin="0,6,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding WatchFolderPath, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="1"
+                                Margin="8,0,0,0"
+                                Padding="12,6"
+                                Content="参照..."
+                                Command="{Binding BrowseWatchFolderCommand}" />
+                    </Grid>
+                    <TextBlock Margin="0,4,0,0"
+                               FontSize="11"
+                               Foreground="Gray"
+                               TextWrapping="Wrap"
+                               Text="この製品では、この PC 内のフォルダのみ指定できます。">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowLocalWatchFolderHint}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
 
                 <TextBlock Text="デフォルト表示秒数（5〜300）"
                            FontWeight="SemiBold" />

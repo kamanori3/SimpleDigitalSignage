@@ -13,17 +13,26 @@ public static partial class SettingsValidator
 
   public static bool TryValidate(
     string watchFolderPath,
+    bool allowNetworkWatchFolder,
     int defaultDisplaySeconds,
     bool appExitTimeEnabled,
     string appExitTime,
     bool pcShutdownTimeEnabled,
     string pcShutdownTime,
     string recoveryMessage,
-    out string errorMessage)
+    out string errorMessage,
+    Func<string, DriveType>? getDriveType = null)
   {
     if (string.IsNullOrWhiteSpace(watchFolderPath))
     {
       errorMessage = "監視フォルダを入力してください。";
+      return false;
+    }
+
+    if (!WatchFolderLocationPolicy.IsAllowedOnThisPc(
+          watchFolderPath, allowNetworkWatchFolder, getDriveType))
+    {
+      errorMessage = "監視フォルダはこの PC 内のフォルダを指定してください。";
       return false;
     }
 

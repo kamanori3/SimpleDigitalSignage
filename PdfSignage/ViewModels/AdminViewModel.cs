@@ -120,6 +120,9 @@ public sealed class AdminViewModel : ViewModelBase
     set => SetProperty(ref _recoveryMessage, value);
   }
 
+  /// <summary>スタンドアロン商品のとき、監視フォルダがこの PC 内に限る旨を出す。</summary>
+  public bool ShowLocalWatchFolderHint => !_savedSettings.AllowNetworkWatchFolder;
+
   public string StatusMessage
   {
     get => _statusMessage;
@@ -293,6 +296,7 @@ public sealed class AdminViewModel : ViewModelBase
 
     if (requireValid && !SettingsValidator.TryValidate(
           WatchFolderPath.Trim(),
+          _savedSettings.AllowNetworkWatchFolder,
           defaultDisplaySeconds,
           AppExitTimeEnabled,
           AppExitTime,
@@ -307,6 +311,7 @@ public sealed class AdminViewModel : ViewModelBase
     }
 
     settings.WatchFolderPath = WatchFolderPath.Trim();
+    settings.AllowNetworkWatchFolder = _savedSettings.AllowNetworkWatchFolder;
     settings.DefaultDisplaySeconds = defaultDisplaySeconds;
     settings.WindowsAutoStart = WindowsAutoStart;
     settings.AppExitTime = AppExitTimeEnabled
@@ -322,6 +327,7 @@ public sealed class AdminViewModel : ViewModelBase
   private static bool SettingsEquals(AppSettings left, AppSettings right)
   {
     return left.WatchFolderPath == right.WatchFolderPath
+           && left.AllowNetworkWatchFolder == right.AllowNetworkWatchFolder
            && left.DefaultDisplaySeconds == right.DefaultDisplaySeconds
            && left.WindowsAutoStart == right.WindowsAutoStart
            && left.AppExitTime == right.AppExitTime
@@ -334,6 +340,7 @@ public sealed class AdminViewModel : ViewModelBase
     return new AppSettings
     {
       WatchFolderPath = source.WatchFolderPath,
+      AllowNetworkWatchFolder = source.AllowNetworkWatchFolder,
       DefaultDisplaySeconds = source.DefaultDisplaySeconds,
       WindowsAutoStart = source.WindowsAutoStart,
       AppExitTime = source.AppExitTime,

@@ -3,9 +3,8 @@ using PdfSignage.Services;
 namespace PdfSignage.Tests;
 
 /// <summary>
-/// ログフォルダの算出のみを対象とする。
-/// ResolveWatchFolderPath / ResolveLogDirectory はフォルダを作成する副作用があるため、
-/// ここでは扱わず受け入れテストでカバーする。
+/// ログフォルダの算出と、ネットワークパス拒否時のフォールバックを対象とする。
+/// ローカルフォルダを作成する ResolveWatchFolderPath の成功経路は受け入れテストでカバーする。
 /// </summary>
 public class PathHelperTests
 {
@@ -42,5 +41,22 @@ public class PathHelperTests
     Assert.Equal(
       System.IO.Path.Combine(AppContext.BaseDirectory, "SignageData"),
       PathHelper.GetDevSignageDataPath());
+  }
+
+  [Fact]
+  public void 未許可のUNCは開発用フォルダへフォールバックする()
+  {
+    var resolved = PathHelper.ResolveWatchFolderPath(
+      @"\\server\share\signage", allowNetworkWatchFolder: false);
+    Assert.Equal(PathHelper.GetDevSignageDataPath(), resolved);
+  }
+
+  [Fact]
+  public void 未許可のUNCのログは解決済みフォルダ基準になる()
+  {
+    var resolved = PathHelper.GetDevSignageDataPath();
+    var log = PathHelper.ResolveLogDirectory(
+      @"\\server\share\signage", resolved, allowNetworkWatchFolder: false);
+    Assert.Equal(PathHelper.GetLogDirectory(resolved), log);
   }
 }

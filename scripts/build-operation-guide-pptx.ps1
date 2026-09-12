@@ -409,7 +409,7 @@ try {
     [void](Add-Text -Slide $s -Text (@(
                 '・表示したいファイルをフォルダに入れる',
                 '・不要になったファイルを削除する',
-                '・ファイル名で表示順と表示時間を調整する'
+                '・ファイル名で表示順・表示時間・再生期限を調整する'
             ) -join $NL) -L ($ML + 26) -T ($cardY + 124) -W ($cardW - 52) -H 90 -Size 13.5 -Color $C.Body -Line 1.35 -After 8)
 
     $l2 = $ML + $cardW + 24
@@ -485,20 +485,20 @@ try {
         -L $ML -T 410 -W $CW -H 52
 
     # ------------------------------------------------- 6. 担当者：表示順 ---
-    $s = Add-Slide -Pres $pres -Kicker 'FOR CONTENT OWNER' -Title '表示順はファイル名で決まる' -Accent $C.Teal -Badge 'コンテンツ担当者'
-    [void](Add-Text -Slide $s -Text 'ファイル名の自然な順（人が読む順に近い並び）で表示します。' `
-            -L $ML -T $ContentTop -W $CW -H 22 -Size 13.5 -Color $C.Body)
+    $s = Add-Slide -Pres $pres -Kicker 'FOR CONTENT OWNER' -Title '表示順はファイル名の昇順' -Accent $C.Teal -Badge 'コンテンツ担当者'
+    [void](Add-Text -Slide $s -Text 'ファイル名の昇順で表示します。数字の部分は数値として比べるので、001 → 002 → 010 の順になります。' `
+            -L $ML -T $ContentTop -W $CW -H 36 -Size 13.5 -Color $C.Body)
     $d = New-TableData `
         @('ファイル名の例', '実際の表示順') `
-        @('001.jpg → 002.jpg → 010.jpg', '001 → 002 → 010（意図どおり）') `
-        @('1.jpg → 10.jpg → 2.jpg', '1 → 10 → 2（意図とずれることがある）')
+        @('001.jpg → 002.jpg → 010.jpg', '001 → 002 → 010（昇順）') `
+        @('1.jpg → 2.jpg → 10.jpg', '1 → 2 → 10（数値の昇順）')
     [void](Add-StyledTable -Slide $s -Data $d -L $ML -T 192 -ColWidth @(430, 402) -HeaderHeight 36 -RowHeight 58 -Accent $C.Teal)
-    Add-Callout -Slide $s -Label 'おすすめ' -Text '先頭を 001・002・003 … のように桁を揃えておくと、並び替えも差し替えも管理しやすくなります。' `
+    Add-Callout -Slide $s -Label 'おすすめ' -Text '先頭を 001・002・003 … のように桁を揃えておくと、意図どおりの昇順になり、並び替えも差し替えも管理しやすくなります。' `
         -L $ML -T 376 -W $CW -H 60 -Fill $C.TealSoft -Accent $C.Teal
 
     # ----------------------------------------------- 7. 担当者：表示時間 ---
     $s = Add-Slide -Pres $pres -Kicker 'FOR CONTENT OWNER' -Title '表示時間はファイル名で変えられる' -Accent $C.Teal -Badge 'コンテンツ担当者'
-    [void](Add-Text -Slide $s -Text '画像と PDF は、拡張子の直前に「_秒数」を付けると、そのファイルだけ表示時間を変えられます。' `
+    [void](Add-Text -Slide $s -Text '画像と PDF は、ファイル名の末尾（拡張子の直前）に「_秒数」を付けると、そのファイルだけ表示時間を変えられます（5〜300 秒）。' `
             -L $ML -T $ContentTop -W $CW -H 22 -Size 13.5 -Color $C.Body)
 
     [void](New-Box -Slide $s -Type $shpRound -L $ML -T 186 -W $CW -H 84 -Fill '10233D' -Round 0.12)
@@ -523,11 +523,38 @@ try {
     Add-Callout -Slide $s -Label '動画は例外' -Text '.mp4 は再生が終わるまで表示します。秒数指定は効きません。' `
         -L $ML -T 420 -W $CW -H 48
 
+    # ----------------------------------------------- 7b. 担当者：再生期限 ---
+    $s = Add-Slide -Pres $pres -Kicker 'FOR CONTENT OWNER' -Title '再生期限もファイル名で付けられる' -Accent $C.Teal -Badge 'コンテンツ担当者'
+    [void](Add-Text -Slide $s -Text '末尾に「_年月日」（8 桁）を付けると、その日まで再生し、翌日から表示しなくなります。秒数との順番は問いません。' `
+            -L $ML -T $ContentTop -W $CW -H 36 -Size 13.5 -Color $C.Body)
+
+    [void](New-Box -Slide $s -Type $shpRound -L $ML -T 186 -W $CW -H 84 -Fill '10233D' -Round 0.12)
+    [void](Add-Text -Slide $s -Text '案内_20_20260904.pdf' -L ($ML + 34) -T 200 -W 500 -H 34 -Size 24 -Bold -Color 'FFFFFF' -FontName $Mono)
+    [void](Add-Text -Slide $s -Text '「_20」が表示秒数、「_20260904」が期限。案内_20260904_20.pdf でも同じです。' `
+            -L ($ML + 34) -T 236 -W ($CW - 68) -H 22 -Size 12.5 -Color '9FB4D4')
+
+    $ex = @(
+        @('案内_20260904.pdf', '期限のみ', '標準の秒数で 9月4日まで再生'),
+        @('案内_20_20260212.pdf', '秒数 → 期限', '20 秒表示、2月12日まで'),
+        @('案内_20260102_30.pdf', '期限 → 秒数', '30 秒表示、1月2日まで')
+    )
+    $cx = $ML
+    foreach ($e in $ex) {
+        [void](New-Box -Slide $s -Type $shpRound -L $cx -T 292 -W 264 -H 110 -Fill $C.White -Border $C.Border -Round 0.1)
+        [void](Add-Text -Slide $s -Text $e[0] -L ($cx + 16) -T 308 -W 232 -H 22 -Size 12 -Bold -Color $C.Ink -FontName $Mono)
+        [void](Add-Text -Slide $s -Text $e[1] -L ($cx + 16) -T 334 -W 232 -H 22 -Size 16 -Bold -Color $C.Teal)
+        [void](Add-Text -Slide $s -Text $e[2] -L ($cx + 16) -T 362 -W 232 -H 30 -Size 11.5 -Color $C.Muted -Line 1.25)
+        $cx += 284
+    }
+
+    Add-Callout -Slide $s -Label '誤りと動画' -Text '存在しない日付・桁不足（例 _2026923）・秒数の重複などは再生を止めません。管理画面を開くたびに「表示期限の指定」ダイアログで、○○_20261231 などの例と対象ファイル名を知らせます。動画も期限の対象です。' `
+        -L $ML -T 420 -W $CW -H 48
+
     # ------------------------------------------------- 8. 担当者：注意点 ---
     $s = Add-Slide -Pres $pres -Kicker 'FOR CONTENT OWNER' -Title '知っておきたい 3 つのこと' -Accent $C.Teal -Badge 'コンテンツ担当者'
     $notes = @(
         @('コピー中は反映されない', 'ファイルのコピー途中だと読み込みに失敗することがあります。コピーが完了すれば自動で反映されます。'),
-        @('壊れたファイルはスキップ', '読めないファイルは自動で飛ばし、残りのファイルは続けて表示されます。掲示が止まることはありません。'),
+        @('壊れたファイルはスキップ', '読めないファイルは自動で飛ばし、残りのファイルは続けて表示されます。管理画面を開くと、対象ファイル名を「壊れたファイル」ダイアログで知らせます。'),
         @('設定変更は管理者が行う', 'フォルダの場所や標準の表示秒数などの変更は、管理者が管理画面で行います。')
     )
     $ny = 168.0
@@ -566,7 +593,7 @@ try {
             $kx += 26
         }
     }
-    [void](Add-Text -Slide $s -Text '同時に押すと管理画面が開きます。もう一度押すか「通常モード（キオスク）に戻る」でキオスク表示へ戻ります。' `
+    [void](Add-Text -Slide $s -Text '同時に押すと管理画面が開きます。ファイル名の秒数・期限の誤りは「表示期限の指定」、壊れたファイルは「壊れたファイル」ダイアログで、開くたびに対象ファイルを知らせます。' `
             -L ($rl + 26) -T ($ContentTop + 156) -W 352 -H 40 -Size 11.5 -Color '9FB4D4' -Line 1.3)
 
     Add-Callout -Slide $s -Label '保存を忘れずに' -Text '値を変更したら「保存して設定する」をクリック。再起動なしで即時反映されます。画面下部が緑なら成功、赤なら入力内容を確認してください。' `
@@ -665,9 +692,9 @@ try {
 
     $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（2/2）'
     Add-Faq -Slide $s -T 152 -Question '画面に「表示を復旧しています」と出ます' `
-        -Answer 'フォルダ内のファイルがすべて読み込めない状態です。ファイルの破損や形式の誤りを確認してください。文言は管理画面の「復帰不能時メッセージ」で変更できます。' -H 100
-    Add-Faq -Slide $s -T 264 -Question '動画だけ表示時間を短くしたい' `
-        -Answer '動画は再生完了まで表示され、秒数指定はできません。短くしたい場合は動画自体を編集してください。'
+        -Answer 'フォルダ内のファイルがすべて読み込めない状態です。管理画面を開くと「壊れたファイル」ダイアログで対象ファイル名が出ます。文言は「復帰不能時メッセージ」で変更できます。' -H 100
+    Add-Faq -Slide $s -T 264 -Question '壊れたファイルがあるか知りたい' `
+        -Answer '管理画面（Ctrl＋Shift＋M）を開くたびに、「壊れたファイル」ダイアログで対象ファイル名が出ます。再生は続き、壊れたファイルだけ飛ばします。'
     Add-Faq -Slide $s -T 368 -Question '複数の PC で同じフォルダを見せたい' `
         -Answer '各 PC にアプリを入れて同じ共有フォルダを指定する運用は可能ですが、ネットワーク共有パスの正式サポートは将来拡張です。まずはローカルフォルダを推奨します。アクセス制限は導入先の共有設定に任せ、アプリでは権限管理しません。' -H 100
 
@@ -680,7 +707,8 @@ try {
         @('表示を追加', '監視フォルダ直下にファイルを保存') `
         @('表示を削除', '監視フォルダからファイルを削除') `
         @('表示順を変える', 'ファイル名を変更（001, 002 …）') `
-        @('表示時間を変える', 'ファイル名に _秒数 を付ける（動画を除く）')
+        @('表示時間を変える', '末尾に _秒数（動画を除く）') `
+        @('再生期限を付ける', '末尾に _20260904 のような日付')
     [void](Add-StyledTable -Slide $s -Data $d -L $ML -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 44 -Accent $C.Teal -BodySize 11.5 -HeaderSize 12 -BoldFirstColumn)
 
     [void](Add-Text -Slide $s -Text 'システム管理者' -L $rl -T 152 -W 404 -H 24 -Size 15 -Bold -Color $C.Accent)

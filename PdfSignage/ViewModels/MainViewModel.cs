@@ -174,11 +174,17 @@ public class MainViewModel : ViewModelBase, IDisposable
   /// </summary>
   private void OnFolderContentChanged()
   {
-    Application.Current.Dispatcher.BeginInvoke(() =>
-    {
-      _playlistReloadPending = true;
-      _context.Logger.Info("プレイリスト更新を予約しました（現在のスライド完了後に反映）。");
-    });
+    Application.Current.Dispatcher.BeginInvoke(RequestPlaylistReload);
+  }
+
+  /// <summary>
+  /// 次のスライド境界でプレイリストを再構築するよう予約する。
+  /// フォルダ変更・日付跨ぎから呼ぶ（表示中スライドは中断しない）。
+  /// </summary>
+  public void RequestPlaylistReload()
+  {
+    _playlistReloadPending = true;
+    _context.Logger.Info("プレイリスト更新を予約しました（現在のスライド完了後に反映）。");
   }
 
   /// <summary>起動時・空フォルダポーリング用。常に先頭から構築する。</summary>
@@ -200,9 +206,11 @@ public class MainViewModel : ViewModelBase, IDisposable
     ClearVideoState();
 
     var oldSlides = _slides;
+    var today = DateOnly.FromDateTime(DateTime.Today);
     var contentFiles = ContentFolderScanner.Scan(_context.ResolvedWatchFolder);
+    var playableCount = contentFiles.Count(filePath => DisplayDurationParser.IsPlayable(filePath, today));
     _slides = _playlistBuilder
-      .Build(_context.ResolvedWatchFolder, _renderWidth, _renderHeight)
+      .Build(_context.ResolvedWatchFolder, _renderWidth, _renderHeight, today)
       .ToList();
 
     if (_slides.Count == 0)
@@ -211,8 +219,9 @@ public class MainViewModel : ViewModelBase, IDisposable
       HasSlides = false;
       CurrentImage = null;
 
-      // ファイルはあるが Build で全部落ちた → 復帰不能。無いだけ → 空フォルダ（正常）
-      if (contentFiles.Count > 0)
+      // 読込対象はあるのに Build で全部落ちた → 復帰不能。
+      // ファイル無し・全件期限切れは空フォルダ（正常）
+      if (playableCount > 0)
       {
         ShowRecoveryState("コンテンツファイルは存在しますが、すべて読み込みに失敗しました。");
       }

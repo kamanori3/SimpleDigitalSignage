@@ -1,3 +1,4 @@
+using System.IO;
 using PdfSignage.Models;
 using PdfSignage.Services;
 
@@ -8,19 +9,25 @@ public class SettingsValidatorTests
   private static bool Validate(
     out string error,
     string watchFolder = @"D:\Signage",
+    bool allowNetwork = false,
     int seconds = 15,
     bool appExitEnabled = false,
     string appExitTime = "18:00",
     bool shutdownEnabled = false,
     string shutdownTime = "18:03",
-    string recoveryMessage = "表示を復旧しています")
+    string recoveryMessage = "表示を復旧しています",
+    Func<string, DriveType>? getDriveType = null)
   {
+    getDriveType ??= _ => DriveType.Fixed;
     return SettingsValidator.TryValidate(
-      watchFolder, seconds,
+      watchFolder,
+      allowNetwork,
+      seconds,
       appExitEnabled, appExitTime,
       shutdownEnabled, shutdownTime,
       recoveryMessage,
-      out error);
+      out error,
+      getDriveType);
   }
 
   [Fact]
@@ -83,6 +90,29 @@ public class SettingsValidatorTests
   {
     Assert.False(Validate(out var error, recoveryMessage: "  "));
     Assert.Contains("復帰不能時メッセージ", error);
+  }
+
+  [Fact]
+  public void ネットワーク不許可ならUNCの監視フォルダは無効()
+  {
+    Assert.False(Validate(out var error, watchFolder: @"\\server\share\signage"));
+    Assert.Contains("この PC 内", error);
+  }
+
+  [Fact]
+  public void ネットワーク不許可なら割り当てドライブは無効()
+  {
+    Assert.False(Validate(
+      out var error,
+      watchFolder: @"Z:\Signage",
+      getDriveType: _ => DriveType.Network));
+    Assert.Contains("この PC 内", error);
+  }
+
+  [Fact]
+  public void ネットワーク許可ならUNCの監視フォルダは有効()
+  {
+    Assert.True(Validate(out _, watchFolder: @"\\server\share\signage", allowNetwork: true));
   }
 
   [Theory]
