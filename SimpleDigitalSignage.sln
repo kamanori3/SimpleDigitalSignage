@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfSignage.Tests", "PdfSign
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfSignage.Licensing", "PdfSignage.Licensing\PdfSignage.Licensing.csproj", "{3311D34D-7E2D-40E2-8D1E-7FDC53504D54}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfSignage.Issuer", "PdfSignage.Issuer\PdfSignage.Issuer.csproj", "{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{3311D34D-7E2D-40E2-8D1E-7FDC53504D54}.Release|x64.Build.0 = Release|Any CPU
 		{3311D34D-7E2D-40E2-8D1E-7FDC53504D54}.Release|x86.ActiveCfg = Release|Any CPU
 		{3311D34D-7E2D-40E2-8D1E-7FDC53504D54}.Release|x86.Build.0 = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|x64.Build.0 = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Debug|x86.Build.0 = Debug|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|x64.ActiveCfg = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|x64.Build.0 = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|x86.ActiveCfg = Release|Any CPU
+		{1DB52FAA-3DE5-47E1-B18A-0520B8BB1CCA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
