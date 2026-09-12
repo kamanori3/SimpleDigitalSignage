@@ -3,36 +3,19 @@ using PdfSignage.Services;
 namespace PdfSignage.Tests;
 
 /// <summary>
-/// ログフォルダの算出と、ネットワークパス拒否時のフォールバックを対象とする。
+/// ログフォルダの固定パスと、ネットワークパス拒否時のフォールバックを対象とする。
 /// ローカルフォルダを作成する ResolveWatchFolderPath の成功経路は受け入れテストでカバーする。
 /// </summary>
 public class PathHelperTests
 {
   [Fact]
-  public void ログフォルダは監視フォルダの親階層に作る()
+  public void ログフォルダはこのPCのLocalAppData()
   {
-    Assert.Equal(@"D:\logs", PathHelper.GetLogDirectory(@"D:\Signage"));
-  }
-
-  [Fact]
-  public void 入れ子のフォルダでも親階層に作る()
-  {
-    Assert.Equal(@"C:\app\data\logs", PathHelper.GetLogDirectory(@"C:\app\data\signage"));
-  }
-
-  [Fact]
-  public void 末尾の区切り文字があっても同じ結果になる()
-  {
-    Assert.Equal(
-      PathHelper.GetLogDirectory(@"D:\Signage"),
-      PathHelper.GetLogDirectory(@"D:\Signage\"));
-  }
-
-  [Fact]
-  public void ドライブ直下を指定した場合は自身の下に作る()
-  {
-    // 親が存在しないため、監視フォルダ自身の直下へフォールバックする
-    Assert.Equal(@"D:\logs", PathHelper.GetLogDirectory(@"D:\"));
+    var expected = System.IO.Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+      "PdfSignage",
+      "logs");
+    Assert.Equal(expected, PathHelper.GetLogDirectory());
   }
 
   [Fact]
@@ -49,14 +32,5 @@ public class PathHelperTests
     var resolved = PathHelper.ResolveWatchFolderPath(
       @"\\server\share\signage", allowNetworkWatchFolder: false);
     Assert.Equal(PathHelper.GetDevSignageDataPath(), resolved);
-  }
-
-  [Fact]
-  public void 未許可のUNCのログは解決済みフォルダ基準になる()
-  {
-    var resolved = PathHelper.GetDevSignageDataPath();
-    var log = PathHelper.ResolveLogDirectory(
-      @"\\server\share\signage", resolved, allowNetworkWatchFolder: false);
-    Assert.Equal(PathHelper.GetLogDirectory(resolved), log);
   }
 }

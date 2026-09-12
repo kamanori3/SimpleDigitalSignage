@@ -693,8 +693,8 @@ try {
             -L ($rl + 26) -T ($ContentTop + 66) -W 352 -H 20 -Size 12 -Color $C.Muted)
     $ly = $ContentTop + 96
     $logs = @(
-        @('場所', '監視フォルダと同じ階層の logs フォルダ'),
-        @('例', '監視フォルダが D:\Signage → ログは D:\logs'),
+        @('場所', 'この PC の LocalAppData\PdfSignage\logs'),
+        @('確認', '管理画面の「ログフォルダ」に実パスが出る'),
         @('保存期間', '7 日間（古いログは自動削除）')
     )
     foreach ($lg in $logs) {

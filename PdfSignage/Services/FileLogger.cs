@@ -28,7 +28,7 @@ public class FileLogger
   }
 
   /// <summary>
-  /// 監視フォルダ変更時にログ出力先を更新する。
+  /// ログ出力先を更新する。期限切れログの削除もここで走る。
   /// </summary>
   public void SetLogDirectory(string logDirectory)
   {

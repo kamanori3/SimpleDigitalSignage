@@ -39,8 +39,7 @@ public sealed class ApplicationContext
     var settings = settingsService.Load();
     var resolvedWatchFolder = PathHelper.ResolveWatchFolderPath(
       settings.WatchFolderPath, settings.AllowNetworkWatchFolder);
-    var logDirectory = PathHelper.ResolveLogDirectory(
-      settings.WatchFolderPath, resolvedWatchFolder, settings.AllowNetworkWatchFolder);
+    var logDirectory = PathHelper.GetLogDirectory();
 
     Directory.CreateDirectory(resolvedWatchFolder);
     Directory.CreateDirectory(logDirectory);
@@ -76,8 +75,7 @@ public sealed class ApplicationContext
     Settings = settings;
     ResolvedWatchFolder = PathHelper.ResolveWatchFolderPath(
       settings.WatchFolderPath, settings.AllowNetworkWatchFolder);
-    LogDirectory = PathHelper.ResolveLogDirectory(
-      settings.WatchFolderPath, ResolvedWatchFolder, settings.AllowNetworkWatchFolder);
+    LogDirectory = PathHelper.GetLogDirectory();
 
     Directory.CreateDirectory(ResolvedWatchFolder);
     Directory.CreateDirectory(LogDirectory);

@@ -3,45 +3,14 @@ namespace PdfSignage.Services;
 public static class PathHelper
 {
   /// <summary>
-  /// 監視フォルダと同じ階層の logs フォルダパスを返す。
-  /// 例: D:\Signage → D:\logs
+  /// この PC のログフォルダ。監視フォルダ（共有を含む）には置かない。
   /// </summary>
-  public static string GetLogDirectory(string watchFolderPath)
+  public static string GetLogDirectory()
   {
-    // 末尾の区切り文字が残っていると GetParent が監視フォルダ自身を返し、
-    // logs が監視フォルダの内側に作られてしまう
-    var fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(watchFolderPath));
-    var parent = Directory.GetParent(fullPath);
-
-    if (parent is null)
-    {
-      return Path.Combine(fullPath, "logs");
-    }
-
-    return Path.Combine(parent.FullName, "logs");
-  }
-
-  /// <summary>
-  /// 設定上の監視フォルダに基づいてログパスを算出する。
-  /// 設定パスのドライブが存在しない開発環境では、実際の監視フォルダに基づく。
-  /// </summary>
-  public static string ResolveLogDirectory(
-    string configuredWatchFolder,
-    string resolvedWatchFolder,
-    bool allowNetworkWatchFolder = false)
-  {
-    if (!WatchFolderLocationPolicy.IsAllowedOnThisPc(configuredWatchFolder, allowNetworkWatchFolder))
-    {
-      return GetLogDirectory(resolvedWatchFolder);
-    }
-
-    var configRoot = Path.GetPathRoot(Path.GetFullPath(configuredWatchFolder));
-    if (configRoot is not null && !Directory.Exists(configRoot))
-    {
-      return GetLogDirectory(resolvedWatchFolder);
-    }
-
-    return GetLogDirectory(configuredWatchFolder);
+    return Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+      "PdfSignage",
+      "logs");
   }
 
   /// <summary>
