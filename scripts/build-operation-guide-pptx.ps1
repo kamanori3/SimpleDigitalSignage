@@ -222,7 +222,7 @@ function Add-Slide {
     }
 
     $n = $Pres.Slides.Count
-    [void](Add-Text -Slide $slide -Text '簡易デジタルサイネージ ｜ 操作ガイド' -L $script:ML -T 502 -W 400 -H 14 -Size 9 -Color $C.Muted)
+    [void](Add-Text -Slide $slide -Text '簡単！シンプル！サイネージ ｜ 操作ガイド' -L $script:ML -T 502 -W 520 -H 14 -Size 9 -Color $C.Muted)
     [void](Add-Text -Slide $slide -Text ([string]$n) -L ($script:SW - $script:ML - 100) -T 502 -W 100 -H 14 -Size 9 -Color $C.Muted -Align 3)
     return $slide
 }
@@ -381,7 +381,7 @@ try {
     [void](New-Box -Slide $s -Type $shpOval -L 730 -T 250 -W 380 -H 380 -Fill $C.Teal -Transparency 0.86)
     [void](New-Box -Slide $s -L $ML -T 150 -W 68 -H 5 -Fill $C.Accent)
 
-    [void](Add-Text -Slide $s -Text 'SIMPLE DIGITAL SIGNAGE' -L $ML -T 118 -W 500 -H 20 -Size 12.5 -Bold -Color '7FA6F5')
+    [void](Add-Text -Slide $s -Text '簡単！シンプル！サイネージ' -L $ML -T 118 -W 620 -H 20 -Size 12.5 -Bold -Color '7FA6F5')
     [void](Add-Text -Slide $s -Text '操作ガイド' -L $ML -T 180 -W 620 -H 72 -Size 52 -Bold -Color $C.White)
     [void](Add-Text -Slide $s -Text ('フォルダに入れるだけ。あとは全画面で自動ループ。' + $NL + 'PDF・画像・動画をそのまま掲示できるサイネージアプリの使いかた。') `
             -L $ML -T 266 -W 560 -H 60 -Size 15 -Color $C.DeepText -Line 1.5)
@@ -773,7 +773,7 @@ try {
     }
 
     [void](New-Box -Slide $s -L $ML -T 418 -W $CW -H 1 -Fill '2E4059')
-    [void](Add-Text -Slide $s -Text '簡易デジタルサイネージ ｜ 操作ガイド　（出典：操作ガイド.md）' -L $ML -T 436 -W 600 -H 20 -Size 11.5 -Color '7C8CA6')
+    [void](Add-Text -Slide $s -Text '簡単！シンプル！サイネージ ｜ 操作ガイド　（出典：操作ガイド.md）' -L $ML -T 436 -W 700 -H 20 -Size 11.5 -Color '7C8CA6')
 
     # ------------------------------------------------------------ save ---
     if (Test-Path -LiteralPath $OutputPath) { Remove-Item -LiteralPath $OutputPath -Force }

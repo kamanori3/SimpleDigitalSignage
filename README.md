@@ -1,6 +1,6 @@
-# SimpleDigitalSignage
+# 簡単！シンプル！サイネージ
 
-PDF・画像・動画をフォルダに置くだけで運用できる Windows 向けデジタルサイネージ（WPF / C#）。
+PDF・画像・動画をフォルダに置くだけで運用できる Windows 向けデジタルサイネージ（WPF / C#）。リポジトリ名は SimpleDigitalSignage、実行ファイルは `PdfSignage.exe` です。
 
 指定したフォルダを監視し、`.jpg` / `.jpeg` / `.pdf` / `.mp4` を全画面で順番にループ表示します。コンテンツの更新はファイルをコピーするだけ、設定は `Ctrl+Shift+M` の管理画面からすべて GUI で行えます。
 

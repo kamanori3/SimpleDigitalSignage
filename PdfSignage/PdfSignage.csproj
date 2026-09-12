@@ -9,6 +9,8 @@
     <ApplicationIcon />
     <AssemblyName>PdfSignage</AssemblyName>
     <Version>0.1.0</Version>
+    <AssemblyTitle>簡単！シンプル！サイネージ</AssemblyTitle>
+    <Product>簡単！シンプル！サイネージ</Product>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <PublishReadyToRun>true</PublishReadyToRun>

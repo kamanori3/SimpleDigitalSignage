@@ -52,7 +52,7 @@ public sealed class AdminViewModel : ViewModelBase
   public event Action? ExitApplicationRequested;
 
   public string WindowTitle { get; } =
-    $"簡易デジタルサイネージ　ver.{FormatVersionLabel()} - 管理モード";
+    $"{PdfSignage.AppInfo.ProductName}　ver.{FormatVersionLabel()} - 管理モード";
 
   public string WatchFolderPath
   {
