@@ -610,8 +610,31 @@ try {
         @('PC 電源オフ時刻', '毎日、指定時刻に PC の電源を切る（例：18:03）。無効にすれば電源オフしない') `
         @('復帰不能時メッセージ', 'すべてのファイルが表示できないときに全画面へ出す文言')
     [void](Add-StyledTable -Slide $s -Data $d -L $ML -T 146 -ColWidth @(252, 580) -HeaderHeight 34 -RowHeight 42 -BoldFirstColumn -BodySize 12)
-    Add-Callout -Slide $s -Label '時刻の入力形式' -Text 'HH:mm（24 時間制）で入力します。午後 6 時は 18:00、午前 9 時 30 分は 09:30。' `
+    Add-Callout -Slide $s -Label '時刻の入力形式' -Text 'HH:mm（24 時間制）で入力します。午後 6 時は 18:00、午前 9 時 30 分は 09:30。ライセンス・アクセスキー・ログフォルダは次のスライド。' `
         -L $ML -T 444 -W $CW -H 50 -Fill $C.AccentSoft -Accent $C.Accent
+
+    # ------------------------------------------ 10b. 管理者：ライセンス ---
+    $s = Add-Slide -Pres $pres -Kicker 'FOR ADMINISTRATOR' -Title 'ライセンスとアクセスキー' -Badge 'システム管理者'
+
+    [void](New-Box -Slide $s -Type $shpRound -L $ML -T $ContentTop -W 404 -H 232 -Fill $C.White -Border $C.Border -Round 0.07)
+    [void](Add-Pill -Slide $s -Text 'TRIAL' -L ($ML + 26) -T ($ContentTop + 24) -H 22 -Size 10 -Fill $C.TealSoft -Color $C.Teal)
+    [void](Add-Text -Slide $s -Text '初回起動から 60 日' -L ($ML + 26) -T ($ContentTop + 58) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
+    [void](Add-Text -Slide $s -Text (@(
+                'この Windows ユーザーで初めて起動した日から、暦日 60 日は無料です（当日を含む）。',
+                'フォルダや settings.json を消しても、同じユーザーでは試用は延びません。'
+            ) -join $NL) -L ($ML + 26) -T ($ContentTop + 100) -W 352 -H 110 -Size 13 -Color $C.Body -Line 1.35 -After 8)
+
+    [void](New-Box -Slide $s -Type $shpRound -L $rl -T $ContentTop -W 404 -H 232 -Fill $C.White -Border $C.Border -Round 0.07)
+    [void](Add-Pill -Slide $s -Text 'ACCESS KEY' -L ($rl + 26) -T ($ContentTop + 24) -H 22 -Size 10 -Fill $C.AccentSoft -Color $C.Accent)
+    [void](Add-Text -Slide $s -Text '届いた文字列を貼る' -L ($rl + 26) -T ($ContentTop + 58) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
+    [void](Add-Text -Slide $s -Text (@(
+                '1.  Ctrl＋Shift＋M で管理画面を開く',
+                '2.  メールのアクセスキーをそのまま貼る',
+                '3.  「アクセスキーを適用」を押す'
+            ) -join $NL) -L ($rl + 26) -T ($ContentTop + 100) -W 352 -H 110 -Size 13 -Color $C.Body -Line 1.35 -After 8)
+
+    Add-Callout -Slide $s -Label '期限が切れたとき' -Text '映像は止まりません。画面の下端に「契約期限が切れています…」と出ます。正しいキーを適用すると案内は消えます。誤ったキーでは以前の状態のままです。ログの場所も管理画面に出ます。' `
+        -L $ML -T 396 -W $CW -H 78 -Fill $C.AmberSoft -Accent $C.Amber
 
     # ---------------------------------------------- 11. 管理者：夜間停止 ---
     $s = Add-Slide -Pres $pres -Kicker 'FOR ADMINISTRATOR' -Title '夜に止めて、朝は自動で始める' -Badge 'システム管理者'
@@ -682,7 +705,7 @@ try {
     }
 
     # ------------------------------------------------------- 13-14. FAQ ---
-    $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（1/2）'
+    $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（1/3）'
     Add-Faq -Slide $s -T 152 -Question 'ファイルを入れたのに、すぐ変わりません' `
         -Answer 'いま表示中のスライドが終わるまで待ちます。動画の場合は再生が完了するまで切り替わりません。'
     Add-Faq -Slide $s -T 256 -Question 'サブフォルダに入れたファイルが表示されません' `
@@ -690,13 +713,17 @@ try {
     Add-Faq -Slide $s -T 360 -Question '管理画面が開けません' `
         -Answer 'Ctrl・Shift・M を同時に押してください。キオスク表示の画面がアクティブな状態で試すのがポイントです。'
 
-    $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（2/2）'
+    $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（2/3）'
     Add-Faq -Slide $s -T 152 -Question '画面に「表示を復旧しています」と出ます' `
         -Answer 'フォルダ内のファイルがすべて読み込めない状態です。管理画面を開くと「壊れたファイル」ダイアログで対象ファイル名が出ます。文言は「復帰不能時メッセージ」で変更できます。' -H 100
     Add-Faq -Slide $s -T 264 -Question '壊れたファイルがあるか知りたい' `
         -Answer '管理画面（Ctrl＋Shift＋M）を開くたびに、「壊れたファイル」ダイアログで対象ファイル名が出ます。再生は続き、壊れたファイルだけ飛ばします。'
     Add-Faq -Slide $s -T 368 -Question '複数の PC で同じフォルダを見せたい' `
         -Answer '各 PC にアプリを入れて同じ共有フォルダを指定する運用は可能ですが、ネットワーク共有パスの正式サポートは将来拡張です。まずはローカルフォルダを推奨します。アクセス制限は導入先の共有設定に任せ、アプリでは権限管理しません。' -H 100
+
+    $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（3/3）'
+    Add-Faq -Slide $s -T 152 -Question '画面の下に「契約期限が切れています」と出る' `
+        -Answer '試用または契約の期限が切れています。表示はそのまま続きます。届いたアクセスキーを、管理画面（Ctrl＋Shift＋M）に貼り付けて「アクセスキーを適用」してください。'
 
     # ---------------------------------------------------------- 15. 早見表 ---
     $s = Add-Slide -Pres $pres -Kicker 'CHEAT SHEET' -Title '操作の早見表'
@@ -717,8 +744,10 @@ try {
         @('設定を変更', 'Ctrl＋Shift＋M →変更→「保存して設定する」') `
         @('キオスクに戻る', '「通常モード（キオスク）に戻る」または Ctrl＋Shift＋M') `
         @('アプリを終了', '管理画面の「アプリを終了」') `
-        @('夜に止めて朝始める', 'アプリ終了時刻・PC 電源オフ時刻＋自動起動を ON')
-    [void](Add-StyledTable -Slide $s -Data $d -L $rl -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 44 -Accent $C.Accent -BodySize 11.5 -HeaderSize 12 -BoldFirstColumn)
+        @('夜に止めて朝始める', 'アプリ終了時刻・PC 電源オフ時刻＋自動起動を ON') `
+        @('アクセスキーを入れる', '貼り付け →「アクセスキーを適用」') `
+        @('ログの場所を確認', '管理画面の「ログフォルダ」')
+    [void](Add-StyledTable -Slide $s -Data $d -L $rl -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 36 -Accent $C.Accent -BodySize 11 -HeaderSize 12 -BoldFirstColumn)
 
     # -------------------------------------------------------- 16. 締め ---
     $s = Add-Slide -Pres $pres -NoChrome
