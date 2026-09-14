@@ -1,7 +1,7 @@
 <Window x:Class="PdfSignage.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PDFサイネージ"
+        Title="簡単！シンプル！サイネージ"
         WindowStyle="None"
         ResizeMode="NoResize"
         WindowState="Maximized"
@@ -50,6 +50,18 @@
                        TextAlignment="Center"
                        TextWrapping="Wrap"
                        LineHeight="80" />
+        </Border>
+
+        <Border VerticalAlignment="Bottom"
+                Background="#CC111111"
+                Padding="32,18"
+                Visibility="{Binding ShowLicenseBanner, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding LicenseBannerMessage}"
+                       Foreground="White"
+                       FontSize="22"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center" />
         </Border>
     </Grid>
 </Window>

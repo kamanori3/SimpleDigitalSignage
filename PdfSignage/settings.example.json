@@ -1,8 +1,10 @@
 {
   "watchFolderPath": "D:\\Signage",
+  "allowNetworkWatchFolder": false,
   "defaultDisplaySeconds": 15,
   "windowsAutoStart": false,
   "appExitTime": null,
   "pcShutdownTime": null,
-  "recoveryMessage": "表示を復旧しています"
+  "recoveryMessage": "表示を復旧しています",
+  "accessKey": ""
 }

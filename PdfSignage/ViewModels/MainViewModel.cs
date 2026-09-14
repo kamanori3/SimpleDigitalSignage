@@ -57,6 +57,8 @@ public class MainViewModel : ViewModelBase, IDisposable
 
   private string _emptyMessage = "";
   private string _recoveryMessage = "";
+  private bool _showLicenseBanner;
+  private string _licenseBannerMessage = "";
 
   public MainViewModel(ApplicationContext context)
   {
@@ -78,6 +80,7 @@ public class MainViewModel : ViewModelBase, IDisposable
 
     ReloadPlaylist();
     RestartTimerForCurrentSlide();
+    RefreshLicenseBanner();
   }
 
   // --- バインド用プロパティ（表示の 3 状態は HasSlides × IsRecoveryMessage で決まる） ---
@@ -154,6 +157,18 @@ public class MainViewModel : ViewModelBase, IDisposable
     private set => SetProperty(ref _recoveryMessage, value);
   }
 
+  public bool ShowLicenseBanner
+  {
+    get => _showLicenseBanner;
+    private set => SetProperty(ref _showLicenseBanner, value);
+  }
+
+  public string LicenseBannerMessage
+  {
+    get => _licenseBannerMessage;
+    private set => SetProperty(ref _licenseBannerMessage, value);
+  }
+
   /// <summary>
   /// 動画再生完了（または MediaFailed）時に View から呼び出す。
   /// タイマーは動画中停止しているため、ここが次スライドへの唯一の入口。
@@ -174,11 +189,17 @@ public class MainViewModel : ViewModelBase, IDisposable
   /// </summary>
   private void OnFolderContentChanged()
   {
-    Application.Current.Dispatcher.BeginInvoke(() =>
-    {
-      _playlistReloadPending = true;
-      _context.Logger.Info("プレイリスト更新を予約しました（現在のスライド完了後に反映）。");
-    });
+    Application.Current.Dispatcher.BeginInvoke(RequestPlaylistReload);
+  }
+
+  /// <summary>
+  /// 次のスライド境界でプレイリストを再構築するよう予約する。
+  /// フォルダ変更・日付跨ぎから呼ぶ（表示中スライドは中断しない）。
+  /// </summary>
+  public void RequestPlaylistReload()
+  {
+    _playlistReloadPending = true;
+    _context.Logger.Info("プレイリスト更新を予約しました（現在のスライド完了後に反映）。");
   }
 
   /// <summary>起動時・空フォルダポーリング用。常に先頭から構築する。</summary>
@@ -200,9 +221,11 @@ public class MainViewModel : ViewModelBase, IDisposable
     ClearVideoState();
 
     var oldSlides = _slides;
+    var today = DateOnly.FromDateTime(DateTime.Today);
     var contentFiles = ContentFolderScanner.Scan(_context.ResolvedWatchFolder);
+    var playableCount = contentFiles.Count(filePath => DisplayDurationParser.IsPlayable(filePath, today));
     _slides = _playlistBuilder
-      .Build(_context.ResolvedWatchFolder, _renderWidth, _renderHeight)
+      .Build(_context.ResolvedWatchFolder, _renderWidth, _renderHeight, today)
       .ToList();
 
     if (_slides.Count == 0)
@@ -211,8 +234,9 @@ public class MainViewModel : ViewModelBase, IDisposable
       HasSlides = false;
       CurrentImage = null;
 
-      // ファイルはあるが Build で全部落ちた → 復帰不能。無いだけ → 空フォルダ（正常）
-      if (contentFiles.Count > 0)
+      // 読込対象はあるのに Build で全部落ちた → 復帰不能。
+      // ファイル無し・全件期限切れは空フォルダ（正常）
+      if (playableCount > 0)
       {
         ShowRecoveryState("コンテンツファイルは存在しますが、すべて読み込みに失敗しました。");
       }
@@ -545,7 +569,18 @@ public class MainViewModel : ViewModelBase, IDisposable
 
     ApplyPlaylistReload(preferredNextSlide: null, startIndex: 0);
     RestartTimerForCurrentSlide();
+    RefreshLicenseBanner();
     _context.Logger.Info("スライドショーへ設定を反映しました。");
+  }
+
+  /// <summary>
+  /// 課金状態に合わせてキオスク下端の更新案内を出し入れする。再生は止めない。
+  /// </summary>
+  public void RefreshLicenseBanner()
+  {
+    var show = _context.License.ShowRenewalBanner;
+    ShowLicenseBanner = show;
+    LicenseBannerMessage = show ? LicenseService.RenewalBannerMessage : "";
   }
 
   public void Dispose()

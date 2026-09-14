@@ -5,6 +5,7 @@ namespace PdfSignage.Services;
 
 /// <summary>
 /// 日次のアプリ終了・PC 電源オフ時刻を監視するスケジューラ。
+/// 日付跨ぎも検知し、再生期限の再評価用に <see cref="DateRolledOver"/> を発火する。
 /// </summary>
 public sealed class ScheduleService : IDisposable
 {
@@ -13,6 +14,7 @@ public sealed class ScheduleService : IDisposable
   private readonly ApplicationContext _context;
   private readonly DispatcherTimer _timer;
   private TimeSpan? _previousCheckTimeOfDay;
+  private DateOnly _previousCheckDate;
 
   public ScheduleService(ApplicationContext context)
   {
@@ -26,13 +28,22 @@ public sealed class ScheduleService : IDisposable
 
   public event Action? AppExitRequested;
   public event Action? PcShutdownRequested;
+  public event Action? DateRolledOver;
+
+  /// <summary>前回と今回の日付が異なれば true（スリープ越しの日付変更も含む）。</summary>
+  public static bool HasDateChanged(DateOnly previousDate, DateOnly currentDate)
+  {
+    return currentDate != previousDate;
+  }
 
   public void Start()
   {
-    _previousCheckTimeOfDay = DateTime.Now.TimeOfDay;
+    var now = DateTime.Now;
+    _previousCheckTimeOfDay = now.TimeOfDay;
+    _previousCheckDate = DateOnly.FromDateTime(now);
     LogActiveSchedule();
     _timer.Start();
-    CheckSchedule(_previousCheckTimeOfDay!.Value, DateTime.Now.TimeOfDay);
+    CheckSchedule(_previousCheckTimeOfDay.Value, now.TimeOfDay);
   }
 
   public void Dispose()
@@ -43,10 +54,20 @@ public sealed class ScheduleService : IDisposable
 
   private void OnTimerTick(object? sender, EventArgs e)
   {
-    var previous = _previousCheckTimeOfDay ?? DateTime.Now.TimeOfDay;
-    var current = DateTime.Now.TimeOfDay;
+    var now = DateTime.Now;
+    var previous = _previousCheckTimeOfDay ?? now.TimeOfDay;
+    var current = now.TimeOfDay;
+    var currentDate = DateOnly.FromDateTime(now);
+
+    if (HasDateChanged(_previousCheckDate, currentDate))
+    {
+      _context.Logger.Info("日付が変わりました。プレイリスト再構築を予約します。");
+      DateRolledOver?.Invoke();
+    }
+
     CheckSchedule(previous, current);
     _previousCheckTimeOfDay = current;
+    _previousCheckDate = currentDate;
   }
 
   private void CheckSchedule(TimeSpan previous, TimeSpan current)

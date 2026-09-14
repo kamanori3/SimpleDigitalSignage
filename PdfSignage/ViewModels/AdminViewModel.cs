@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
+using PdfSignage.Licensing;
 using PdfSignage.Models;
 using PdfSignage.Services;
 
@@ -24,6 +25,10 @@ public sealed class AdminViewModel : ViewModelBase
   private bool _pcShutdownTimeEnabled;
   private string _pcShutdownTime = "";
   private string _recoveryMessage = "";
+  private string _accessKeyInput = "";
+  private string _licenseStatusText = "";
+  private string _licenseDetailText = "";
+  private string _logDirectory = "";
   private string _statusMessage = "";
   private bool _hasValidationError;
   private bool _pcShutdownUsesDefault = true;
@@ -38,6 +43,7 @@ public sealed class AdminViewModel : ViewModelBase
 
     BrowseWatchFolderCommand = new RelayCommand(BrowseWatchFolder);
     SaveAndApplyCommand = new RelayCommand(SaveAndApply);
+    ApplyAccessKeyCommand = new RelayCommand(ApplyAccessKey);
     ReturnToKioskCommand = new RelayCommand(RequestReturnToKiosk);
     ExitApplicationCommand = new RelayCommand(RequestExitApplication);
   }
@@ -46,7 +52,7 @@ public sealed class AdminViewModel : ViewModelBase
   public event Action? ExitApplicationRequested;
 
   public string WindowTitle { get; } =
-    $"簡易デジタルサイネージ　ver.{FormatVersionLabel()} - 管理モード";
+    $"{PdfSignage.AppInfo.ProductName}　ver.{FormatVersionLabel()} - 管理モード";
 
   public string WatchFolderPath
   {
@@ -120,6 +126,33 @@ public sealed class AdminViewModel : ViewModelBase
     set => SetProperty(ref _recoveryMessage, value);
   }
 
+  public string AccessKeyInput
+  {
+    get => _accessKeyInput;
+    set => SetProperty(ref _accessKeyInput, value);
+  }
+
+  public string LicenseStatusText
+  {
+    get => _licenseStatusText;
+    private set => SetProperty(ref _licenseStatusText, value);
+  }
+
+  public string LicenseDetailText
+  {
+    get => _licenseDetailText;
+    private set => SetProperty(ref _licenseDetailText, value);
+  }
+
+  public string LogDirectory
+  {
+    get => _logDirectory;
+    private set => SetProperty(ref _logDirectory, value);
+  }
+
+  /// <summary>スタンドアロン商品のとき、監視フォルダがこの PC 内に限る旨を出す。</summary>
+  public bool ShowLocalWatchFolderHint => !_savedSettings.AllowNetworkWatchFolder;
+
   public string StatusMessage
   {
     get => _statusMessage;
@@ -142,6 +175,7 @@ public sealed class AdminViewModel : ViewModelBase
 
   public ICommand BrowseWatchFolderCommand { get; }
   public ICommand SaveAndApplyCommand { get; }
+  public ICommand ApplyAccessKeyCommand { get; }
   public ICommand ReturnToKioskCommand { get; }
   public ICommand ExitApplicationCommand { get; }
 
@@ -168,8 +202,10 @@ public sealed class AdminViewModel : ViewModelBase
     }
 
     RecoveryMessage = settings.RecoveryMessage;
+    AccessKeyInput = settings.AccessKey;
     StatusMessage = "";
     HasValidationError = false;
+    RefreshLicenseUi();
   }
 
   private void ApplyDefaultPcShutdownTime()
@@ -204,6 +240,35 @@ public sealed class AdminViewModel : ViewModelBase
   private void SaveAndApply()
   {
     TrySaveAndApply();
+  }
+
+  private void ApplyAccessKey()
+  {
+    var key = AccessKeyInput.Trim();
+    if (string.IsNullOrEmpty(key))
+    {
+      HasValidationError = true;
+      StatusMessage = "アクセスキーを貼り付けてください。";
+      return;
+    }
+
+    var verify = LicenseService.VerifyAccessKey(key, _context.Logger);
+    if (!verify.IsValid)
+    {
+      HasValidationError = true;
+      StatusMessage = LicenseService.FormatInvalidKeyMessage();
+      return;
+    }
+
+    _context.Settings.AccessKey = key;
+    _context.SettingsService.Save(_context.Settings);
+    _savedSettings.AccessKey = key;
+    AccessKeyInput = key;
+    _context.RefreshLicense();
+    RefreshLicenseUi();
+    HasValidationError = false;
+    StatusMessage = "アクセスキーを適用しました。";
+    _context.Logger.Info("管理画面からアクセスキーを適用しました。");
   }
 
   private void RequestReturnToKiosk()
@@ -264,12 +329,34 @@ public sealed class AdminViewModel : ViewModelBase
       return false;
     }
 
+    var keyChanged = settings.AccessKey != _savedSettings.AccessKey;
+    var keyRejected = false;
+    if (keyChanged)
+    {
+      var verify = LicenseService.VerifyAccessKey(settings.AccessKey, _context.Logger);
+      if (!verify.IsValid)
+      {
+        settings.AccessKey = _savedSettings.AccessKey;
+        keyRejected = true;
+      }
+    }
+
     _context.SettingsService.Save(settings);
     _context.ApplySettings(settings);
     WindowsAutoStartService.Apply(settings.WindowsAutoStart, _context.Logger);
     _applySettings(settings);
 
     _savedSettings = CloneSettings(settings);
+    RefreshLicenseUi();
+
+    if (keyRejected)
+    {
+      HasValidationError = true;
+      StatusMessage = "設定は保存しました。" + LicenseService.FormatInvalidKeyMessage()
+                      + " 以前のアクセスキーのままです。";
+      return false;
+    }
+
     HasValidationError = false;
     StatusMessage = "設定を保存し、実行中のアプリへ反映しました。";
     _context.Logger.Info("管理画面から設定を保存・反映しました。");
@@ -293,6 +380,7 @@ public sealed class AdminViewModel : ViewModelBase
 
     if (requireValid && !SettingsValidator.TryValidate(
           WatchFolderPath.Trim(),
+          _savedSettings.AllowNetworkWatchFolder,
           defaultDisplaySeconds,
           AppExitTimeEnabled,
           AppExitTime,
@@ -307,6 +395,7 @@ public sealed class AdminViewModel : ViewModelBase
     }
 
     settings.WatchFolderPath = WatchFolderPath.Trim();
+    settings.AllowNetworkWatchFolder = _savedSettings.AllowNetworkWatchFolder;
     settings.DefaultDisplaySeconds = defaultDisplaySeconds;
     settings.WindowsAutoStart = WindowsAutoStart;
     settings.AppExitTime = AppExitTimeEnabled
@@ -316,17 +405,62 @@ public sealed class AdminViewModel : ViewModelBase
       ? SettingsValidator.NormalizeTime(PcShutdownTime)
       : null;
     settings.RecoveryMessage = RecoveryMessage.Trim();
+    settings.AccessKey = string.IsNullOrWhiteSpace(AccessKeyInput)
+      ? _savedSettings.AccessKey
+      : AccessKeyInput.Trim();
     return true;
+  }
+
+  private void RefreshLicenseUi()
+  {
+    var license = _context.License;
+    LicenseStatusText = ToStatusLabel(license.Status);
+    LicenseDetailText = FormatLicenseDetail(license);
+    LogDirectory = _context.LogDirectory;
+  }
+
+  private static string ToStatusLabel(LicenseStatus status)
+  {
+    return status switch
+    {
+      LicenseStatus.Trial => "試用中",
+      LicenseStatus.TrialExpired => "試用期間終了",
+      LicenseStatus.Licensed => "契約中",
+      LicenseStatus.LicenseExpired => "契約期限切れ",
+      _ => status.ToString()
+    };
+  }
+
+  private static string FormatLicenseDetail(LicenseEvaluation license)
+  {
+    var remaining = license.RemainingDays > 0
+      ? $"残り {license.RemainingDays} 日"
+      : "残り 0 日";
+    var text = $"期限 {license.ExpiresOn:yyyy-MM-dd}（{remaining}）";
+    if (license.Payload is null)
+    {
+      return text;
+    }
+
+    var plan = license.Payload.Plan == LicensePlan.Site ? "サイト" : "標準";
+    if (string.IsNullOrEmpty(license.Payload.Organization))
+    {
+      return $"{text}  {plan}";
+    }
+
+    return $"{text}  {license.Payload.Organization} / {plan}";
   }
 
   private static bool SettingsEquals(AppSettings left, AppSettings right)
   {
     return left.WatchFolderPath == right.WatchFolderPath
+           && left.AllowNetworkWatchFolder == right.AllowNetworkWatchFolder
            && left.DefaultDisplaySeconds == right.DefaultDisplaySeconds
            && left.WindowsAutoStart == right.WindowsAutoStart
            && left.AppExitTime == right.AppExitTime
            && left.PcShutdownTime == right.PcShutdownTime
-           && left.RecoveryMessage == right.RecoveryMessage;
+           && left.RecoveryMessage == right.RecoveryMessage
+           && left.AccessKey == right.AccessKey;
   }
 
   private static AppSettings CloneSettings(AppSettings source)
@@ -334,11 +468,13 @@ public sealed class AdminViewModel : ViewModelBase
     return new AppSettings
     {
       WatchFolderPath = source.WatchFolderPath,
+      AllowNetworkWatchFolder = source.AllowNetworkWatchFolder,
       DefaultDisplaySeconds = source.DefaultDisplaySeconds,
       WindowsAutoStart = source.WindowsAutoStart,
       AppExitTime = source.AppExitTime,
       PcShutdownTime = source.PcShutdownTime,
-      RecoveryMessage = source.RecoveryMessage
+      RecoveryMessage = source.RecoveryMessage,
+      AccessKey = source.AccessKey
     };
   }
 

@@ -11,6 +11,12 @@ public class AppSettings
 
   public string WatchFolderPath { get; set; } = "D:\\Signage";
 
+  /// <summary>
+  /// true のときだけ UNC / ネットワークドライブを監視フォルダにできる。
+  /// 既定 false（スタンドアロン商品）。管理画面からは変更しない。
+  /// </summary>
+  public bool AllowNetworkWatchFolder { get; set; }
+
   public int DefaultDisplaySeconds { get; set; } = DefaultDisplaySecondsValue;
 
   public bool WindowsAutoStart { get; set; } = false;
@@ -22,4 +28,9 @@ public class AppSettings
   public string? PcShutdownTime { get; set; }
 
   public string RecoveryMessage { get; set; } = "表示を復旧しています";
+
+  /// <summary>
+  /// 署名付きアクセスキー。未入力は空文字。試用開始日はここには置かない（ADR 0013）。
+  /// </summary>
+  public string AccessKey { get; set; } = "";
 }
