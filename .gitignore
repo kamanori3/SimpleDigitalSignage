@@ -21,9 +21,9 @@ Thumbs.db
 Desktop.ini
 
 ## App runtime
-PdfSignage/settings.json
-PdfSignage/SignageData/*
-!PdfSignage/SignageData/.gitkeep
+KS_Signage/settings.json
+KS_Signage/SignageData/*
+!KS_Signage/SignageData/.gitkeep
 
 ## Access key issuer
 secrets/

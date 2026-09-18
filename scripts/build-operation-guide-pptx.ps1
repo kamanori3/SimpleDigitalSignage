@@ -367,7 +367,7 @@ function Add-Faq {
 # ------------------------------------------------------------------ build ---
 Write-Host 'PowerPoint を起動しています...'
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = $true
+$ppt.Visible = $msoTrue
 $pres = $ppt.Presentations.Add()
 $pres.PageSetup.SlideSize = 15
 $pres.PageSetup.SlideWidth = $SW
@@ -445,7 +445,7 @@ try {
         [void](New-Box -Slide $s -Type $shpArrow -L $ax -T ($stepY + 72) -W 25 -H 20 -Fill 'BFD0F2')
     }
 
-    Add-Callout -Slide $s -Label '反映のタイミング' -Text 'ファイルを追加・削除しても、いま表示しているスライドが終わったあとに切り替わります。普段は全画面（キオスクモード）のまま運用します。' `
+    Add-Callout -Slide $s -Label '反映のタイミング' -Text 'ファイルを追加・削除しても、いま表示しているスライドが終わったあとに切り替わります。普段は全画面（コンテンツ表示モード）のまま運用します。' `
         -L $ML -T 404 -W $CW -H 62 -Fill $C.AccentSoft -Accent $C.Accent -Size 13
 
     # ------------------------------------------ 4. 担当者：ファイル追加 ---
@@ -573,7 +573,7 @@ try {
     [void](Add-Pill -Slide $s -Text 'START' -L ($ML + 26) -T ($ContentTop + 24) -H 22 -Size 10 -Fill $C.AccentSoft -Color $C.Accent)
     [void](Add-Text -Slide $s -Text 'アプリを起動する' -L ($ML + 26) -T ($ContentTop + 58) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
     [void](Add-Text -Slide $s -Text (@(
-                '1.  配布フォルダの PdfSignage.exe をダブルクリック',
+                '1.  配布フォルダの KS_Signage.exe をダブルクリック',
                 '2.  全画面でサイネージ表示が始まる',
                 '3.  初回起動時は設定ファイルが自動作成される'
             ) -join $NL) -L ($ML + 26) -T ($ContentTop + 100) -W 352 -H 90 -Size 13 -Color $C.Body -Line 1.35 -After 8)
@@ -610,7 +610,7 @@ try {
         @('PC 電源オフ時刻', '毎日、指定時刻に PC の電源を切る（例：18:03）。無効にすれば電源オフしない') `
         @('復帰不能時メッセージ', 'すべてのファイルが表示できないときに全画面へ出す文言')
     [void](Add-StyledTable -Slide $s -Data $d -L $ML -T 146 -ColWidth @(252, 580) -HeaderHeight 34 -RowHeight 42 -BoldFirstColumn -BodySize 12)
-    Add-Callout -Slide $s -Label '時刻の入力形式' -Text 'HH:mm（24 時間制）で入力します。午後 6 時は 18:00、午前 9 時 30 分は 09:30。ライセンス・アクセスキー・ログフォルダは次のスライド。' `
+    Add-Callout -Slide $s -Label '時刻の入力形式' -Text 'HH:mm（24 時間制）で入力します。午後 6 時は 18:00、午前 9 時 30 分は 09:30。時刻と自動起動は再生設定タブ。ライセンス・アクセスキー・ログフォルダはライセンス等タブ。' `
         -L $ML -T 444 -W $CW -H 50 -Fill $C.AccentSoft -Accent $C.Accent
 
     # ------------------------------------------ 10b. 管理者：ライセンス ---
@@ -629,7 +629,7 @@ try {
     [void](Add-Text -Slide $s -Text '届いた文字列を貼る' -L ($rl + 26) -T ($ContentTop + 58) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
     [void](Add-Text -Slide $s -Text (@(
                 '1.  Ctrl＋Shift＋M で管理画面を開く',
-                '2.  メールのアクセスキーをそのまま貼る',
+                '2.  ライセンス等タブにメールのアクセスキーをそのまま貼る',
                 '3.  「アクセスキーを適用」を押す'
             ) -join $NL) -L ($rl + 26) -T ($ContentTop + 100) -W 352 -H 110 -Size 13 -Color $C.Body -Line 1.35 -After 8)
 
@@ -693,7 +693,7 @@ try {
             -L ($rl + 26) -T ($ContentTop + 66) -W 352 -H 20 -Size 12 -Color $C.Muted)
     $ly = $ContentTop + 96
     $logs = @(
-        @('場所', 'この PC の LocalAppData\PdfSignage\logs'),
+        @('場所', 'この PC の LocalAppData\KS_Signage\logs'),
         @('確認', '管理画面の「ログフォルダ」に実パスが出る'),
         @('保存期間', '7 日間（古いログは自動削除）')
     )
@@ -711,7 +711,7 @@ try {
     Add-Faq -Slide $s -T 256 -Question 'サブフォルダに入れたファイルが表示されません' `
         -Answer '監視フォルダの直下だけが対象です。ファイルを一つ上のフォルダへ移動してください。'
     Add-Faq -Slide $s -T 360 -Question '管理画面が開けません' `
-        -Answer 'Ctrl・Shift・M を同時に押してください。キオスク表示の画面がアクティブな状態で試すのがポイントです。'
+        -Answer 'Ctrl・Shift・M を同時に押してください。コンテンツ表示モードの画面がアクティブな状態で試すのがポイントです。'
 
     $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（2/3）'
     Add-Faq -Slide $s -T 152 -Question '画面に「表示を復旧しています」と出ます' `
@@ -742,7 +742,7 @@ try {
     $d = New-TableData `
         @('やりたいこと', '操作') `
         @('設定を変更', 'Ctrl＋Shift＋M →変更→「保存して設定する」') `
-        @('キオスクに戻る', '「通常モード（キオスク）に戻る」または Ctrl＋Shift＋M') `
+        @('コンテンツ表示モードに戻る', '「コンテンツ表示モードに戻る」または Ctrl＋Shift＋M') `
         @('アプリを終了', '管理画面の「アプリを終了」') `
         @('夜に止めて朝始める', 'アプリ終了時刻・PC 電源オフ時刻＋自動起動を ON') `
         @('アクセスキーを入れる', '貼り付け →「アクセスキーを適用」') `
