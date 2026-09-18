@@ -126,7 +126,7 @@
                                    FontSize="11"
                                    Foreground="Gray"
                                    TextWrapping="Wrap"
-                                   Text="※ 指定時刻に shutdown /s /t 0 を実行します。グループポリシー等により失敗する場合はログを確認してください。" />
+                                   Text="※ アプリ終了時刻が先のときは、終了時に電源オフを予約します。指定時刻にアプリが動いていれば即時電源オフします。グループポリシー等により失敗する場合はログを確認してください。" />
                         <TextBlock Margin="0,0,0,0"
                                    FontSize="11"
                                    Foreground="Gray"

@@ -630,7 +630,8 @@ try {
     [void](Add-Text -Slide $s -Text (@(
                 '1.  Ctrl＋Shift＋M で管理画面を開く',
                 '2.  ライセンス等タブにメールのアクセスキーをそのまま貼る',
-                '3.  「アクセスキーを適用」を押す'
+                '3.  「アクセスキーを適用」を押す',
+                'settings.json を残せば、差し替え後も再入力は不要です。'
             ) -join $NL) -L ($rl + 26) -T ($ContentTop + 100) -W 352 -H 110 -Size 13 -Color $C.Body -Line 1.35 -After 8)
 
     Add-Callout -Slide $s -Label '期限が切れたとき' -Text '映像は止まりません。画面の下端に「契約期限が切れています…」と出ます。正しいキーを適用すると案内は消えます。誤ったキーでは以前の状態のままです。ログの場所も管理画面に出ます。' `
@@ -724,6 +725,8 @@ try {
     $s = Add-Slide -Pres $pres -Kicker 'FAQ' -Title 'よくある質問（3/3）'
     Add-Faq -Slide $s -T 152 -Question '画面の下に「契約期限が切れています」と出る' `
         -Answer '試用または契約の期限が切れています。表示はそのまま続きます。届いたアクセスキーを、管理画面（Ctrl＋Shift＋M）に貼り付けて「アクセスキーを適用」してください。'
+    Add-Faq -Slide $s -T 256 -Question 'アプリを差し替えたらアクセスキーを入れ直す必要がありますか' `
+        -Answer 'settings.json を残して上書きすれば不要です。フォルダごと消すと再入力が必要です。試用開始日は settings.json には無いので、消しても試用期間は延びません。'
 
     # ---------------------------------------------------------- 15. 早見表 ---
     $s = Add-Slide -Pres $pres -Kicker 'CHEAT SHEET' -Title '操作の早見表'
@@ -746,8 +749,9 @@ try {
         @('アプリを終了', '管理画面の「アプリを終了」') `
         @('夜に止めて朝始める', 'アプリ終了時刻・PC 電源オフ時刻＋自動起動を ON') `
         @('アクセスキーを入れる', '貼り付け →「アクセスキーを適用」') `
+        @('アプリを新しい版にする', 'settings.json を残して配布フォルダを上書き') `
         @('ログの場所を確認', '管理画面の「ログフォルダ」')
-    [void](Add-StyledTable -Slide $s -Data $d -L $rl -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 36 -Accent $C.Accent -BodySize 11 -HeaderSize 12 -BoldFirstColumn)
+    [void](Add-StyledTable -Slide $s -Data $d -L $rl -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 32 -Accent $C.Accent -BodySize 11 -HeaderSize 12 -BoldFirstColumn)
 
     # -------------------------------------------------------- 16. 締め ---
     $s = Add-Slide -Pres $pres -NoChrome

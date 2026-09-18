@@ -265,7 +265,9 @@ public partial class MainWindow : Window
 
   private void OnScheduledAppExit()
   {
-    ApplicationContext.Current?.Logger.Info("スケジュールによりアプリを終了します。");
+    var context = ApplicationContext.Current;
+    context?.Logger.Info("スケジュールによりアプリを終了します。");
+    TryArmPendingPcShutdown(context);
     Application.Current.Shutdown();
   }
 
@@ -276,6 +278,27 @@ public partial class MainWindow : Window
     {
       PcShutdownService.TryShutdown(logger);
     }
+  }
+
+  /// <summary>
+  /// アプリ終了後はスケジューラが動かないため、残っている PC 電源オフを OS に予約する。
+  /// </summary>
+  private static void TryArmPendingPcShutdown(ApplicationContext? context)
+  {
+    if (context?.Logger is null)
+    {
+      return;
+    }
+
+    if (!ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(
+          DateTime.Now,
+          context.Settings.PcShutdownTime,
+          out var delaySeconds))
+    {
+      return;
+    }
+
+    PcShutdownService.TryShutdown(context.Logger, delaySeconds);
   }
 
   /// <summary>

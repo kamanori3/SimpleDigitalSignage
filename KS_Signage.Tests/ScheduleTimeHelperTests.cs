@@ -48,4 +48,50 @@ public class ScheduleTimeHelperTests
   {
     Assert.False(ScheduleTimeHelper.TryParseScheduleTime(time, out _));
   }
+
+  [Fact]
+  public void 電源オフが数分後なら予約秒数を返す()
+  {
+    var now = new DateTime(2026, 9, 18, 18, 0, 0);
+    Assert.True(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, "18:03", out var delay));
+    Assert.Equal(180, delay);
+  }
+
+  [Fact]
+  public void 電源オフが現在時刻なら即時()
+  {
+    var now = new DateTime(2026, 9, 18, 18, 0, 0);
+    Assert.True(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, "18:00", out var delay));
+    Assert.Equal(0, delay);
+  }
+
+  [Fact]
+  public void 日付跨ぎの数分後なら予約秒数を返す()
+  {
+    var now = new DateTime(2026, 9, 18, 23, 59, 0);
+    Assert.True(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, "00:02", out var delay));
+    Assert.Equal(180, delay);
+  }
+
+  [Fact]
+  public void 翌朝まで離れた電源オフは予約しない()
+  {
+    var now = new DateTime(2026, 9, 18, 18, 0, 0);
+    Assert.False(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, "08:00", out _));
+  }
+
+  [Fact]
+  public void 電源オフ未設定は予約しない()
+  {
+    var now = new DateTime(2026, 9, 18, 18, 0, 0);
+    Assert.False(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, null, out _));
+  }
+
+  [Fact]
+  public void 上限ちょうどの待ち時間は予約する()
+  {
+    var now = new DateTime(2026, 9, 18, 18, 0, 0);
+    Assert.True(ScheduleTimeHelper.TryGetPendingShutdownDelaySeconds(now, "06:00", out var delay));
+    Assert.Equal(12 * 60 * 60, delay);
+  }
 }
