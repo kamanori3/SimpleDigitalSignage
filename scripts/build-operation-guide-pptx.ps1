@@ -620,8 +620,8 @@ try {
     [void](Add-Pill -Slide $s -Text 'TRIAL' -L ($ML + 26) -T ($ContentTop + 24) -H 22 -Size 10 -Fill $C.TealSoft -Color $C.Teal)
     [void](Add-Text -Slide $s -Text '初回起動から 60 日' -L ($ML + 26) -T ($ContentTop + 58) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
     [void](Add-Text -Slide $s -Text (@(
-                'この Windows ユーザーで初めて起動した日から、暦日 60 日は無料です（当日を含む）。',
-                'フォルダや settings.json を消しても、同じユーザーでは試用は延びません。'
+                'この PC で初めて起動した日から、暦日 60 日は無料です（当日を含む）。',
+                'フォルダや settings.json を消しても、同じ PC では試用は延びません。'
             ) -join $NL) -L ($ML + 26) -T ($ContentTop + 100) -W 352 -H 110 -Size 13 -Color $C.Body -Line 1.35 -After 8)
 
     [void](New-Box -Slide $s -Type $shpRound -L $rl -T $ContentTop -W 404 -H 232 -Fill $C.White -Border $C.Border -Round 0.07)

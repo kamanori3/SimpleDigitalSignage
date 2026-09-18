@@ -1,10 +1,11 @@
+using System.Security;
 using Microsoft.Win32;
 using PdfSignage.Licensing;
 
 namespace PdfSignage.Services;
 
 /// <summary>
-/// 試用開始日を HKCU と LocalAppData に二重書きする（ADR 0013）。
+/// 試用開始日をマシン領域とユーザー領域へ二重書きする（ADR 0013 / 0015）。
 /// </summary>
 public static class TrialMarkerStore
 {
@@ -12,9 +13,20 @@ public static class TrialMarkerStore
   public const string RegistryValueName = "TrialStart";
   public const string FileName = "trial.dat";
 
-  public static string MarkerFilePath =>
+  private const int MachineRegistryIndex = 0;
+  private const int UserRegistryIndex = 1;
+  private const int MachineFileIndex = 2;
+  private const int UserFileIndex = 3;
+
+  public static string UserMarkerFilePath =>
     Path.Combine(
       Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+      "PdfSignage",
+      FileName);
+
+  public static string MachineMarkerFilePath =>
+    Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
       "PdfSignage",
       FileName);
 
@@ -24,23 +36,34 @@ public static class TrialMarkerStore
 
     try
     {
-      var registryDate = TryReadRegistry(logger);
-      var fileDate = TryReadFile(logger);
-      var chosen = TrialMarkerResolver.Resolve(
-        registryDate,
-        fileDate,
-        todayLocal,
-        out var writeRegistry,
-        out var writeFile);
+      DateOnly?[] stored =
+      [
+        TryReadRegistry(Registry.LocalMachine, "HKLM", logger),
+        TryReadRegistry(Registry.CurrentUser, "HKCU", logger),
+        TryReadFile(MachineMarkerFilePath, "ProgramData", logger),
+        TryReadFile(UserMarkerFilePath, "LocalAppData", logger),
+      ];
 
-      if (writeRegistry)
+      var chosen = TrialMarkerResolver.Resolve(stored, todayLocal, out var writeFlags);
+
+      if (writeFlags[MachineRegistryIndex])
       {
-        TryWriteRegistry(chosen, logger);
+        TryWriteRegistry(Registry.LocalMachine, chosen, "HKLM", logger);
       }
 
-      if (writeFile)
+      if (writeFlags[UserRegistryIndex])
       {
-        TryWriteFile(chosen, logger);
+        TryWriteRegistry(Registry.CurrentUser, chosen, "HKCU", logger);
+      }
+
+      if (writeFlags[MachineFileIndex])
+      {
+        TryWriteFile(MachineMarkerFilePath, chosen, "ProgramData", isMachineScope: true, logger);
+      }
+
+      if (writeFlags[UserFileIndex])
+      {
+        TryWriteFile(UserMarkerFilePath, chosen, "LocalAppData", isMachineScope: false, logger);
       }
 
       return chosen;
@@ -52,30 +75,33 @@ public static class TrialMarkerStore
     }
   }
 
-  private static DateOnly? TryReadRegistry(FileLogger logger)
+  private static DateOnly? TryReadRegistry(RegistryKey hive, string label, FileLogger logger)
   {
     try
     {
-      using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
+      using var key = hive.OpenSubKey(RegistryKeyPath);
       var raw = key?.GetValue(RegistryValueName) as string;
       if (TrialStartCodec.TryDecode(raw, out var date))
       {
         return date;
       }
     }
+    catch (Exception ex) when (IsAccessDenied(ex))
+    {
+      // 標準ユーザーの HKLM は読めない環境もある。想定内。
+    }
     catch (Exception ex)
     {
-      logger.Error("試用開始日のレジストリ読込に失敗しました。", ex);
+      logger.Error($"試用開始日のレジストリ読込に失敗しました（{label}）。", ex);
     }
 
     return null;
   }
 
-  private static DateOnly? TryReadFile(FileLogger logger)
+  private static DateOnly? TryReadFile(string path, string label, FileLogger logger)
   {
     try
     {
-      var path = MarkerFilePath;
       if (!File.Exists(path))
       {
         return null;
@@ -87,38 +113,54 @@ public static class TrialMarkerStore
         return date;
       }
     }
+    catch (Exception ex) when (IsAccessDenied(ex))
+    {
+      // ProgramData を他ユーザーが作った場合など、読めないことはある。
+    }
     catch (Exception ex)
     {
-      logger.Error("試用開始日のファイル読込に失敗しました。", ex);
+      logger.Error($"試用開始日のファイル読込に失敗しました（{label}）。", ex);
     }
 
     return null;
   }
 
-  private static void TryWriteRegistry(DateOnly date, FileLogger logger)
+  private static void TryWriteRegistry(RegistryKey hive, DateOnly date, string label, FileLogger logger)
   {
     try
     {
-      using var key = Registry.CurrentUser.CreateSubKey(RegistryKeyPath);
+      using var key = hive.CreateSubKey(RegistryKeyPath);
       if (key is null)
       {
-        logger.Error("試用開始日: レジストリキーを作成できませんでした。");
+        if (!IsMachineHive(hive))
+        {
+          logger.Error($"試用開始日: レジストリキーを作成できませんでした（{label}）。");
+        }
+
         return;
       }
 
       key.SetValue(RegistryValueName, TrialStartCodec.Encode(date), RegistryValueKind.String);
     }
+    catch (Exception ex) when (IsAccessDenied(ex) && IsMachineHive(hive))
+    {
+      // 管理者に昇格していないと HKLM へは書けない。UAC は出さず、ユーザー領域へ任せる。
+    }
     catch (Exception ex)
     {
-      logger.Error("試用開始日のレジストリ書き込みに失敗しました。", ex);
+      logger.Error($"試用開始日のレジストリ書き込みに失敗しました（{label}）。", ex);
     }
   }
 
-  private static void TryWriteFile(DateOnly date, FileLogger logger)
+  private static void TryWriteFile(
+    string path,
+    DateOnly date,
+    string label,
+    bool isMachineScope,
+    FileLogger logger)
   {
     try
     {
-      var path = MarkerFilePath;
       var directory = Path.GetDirectoryName(path);
       if (!string.IsNullOrEmpty(directory))
       {
@@ -127,9 +169,19 @@ public static class TrialMarkerStore
 
       File.WriteAllText(path, TrialStartCodec.Encode(date));
     }
+    catch (Exception ex) when (IsAccessDenied(ex) && isMachineScope)
+    {
+      // ロックダウンされた PC では ProgramData へ書けない。ユーザー領域へ任せる。
+    }
     catch (Exception ex)
     {
-      logger.Error("試用開始日のファイル書き込みに失敗しました。", ex);
+      logger.Error($"試用開始日のファイル書き込みに失敗しました（{label}）。", ex);
     }
   }
+
+  private static bool IsMachineHive(RegistryKey hive) =>
+    ReferenceEquals(hive, Registry.LocalMachine);
+
+  private static bool IsAccessDenied(Exception ex) =>
+    ex is UnauthorizedAccessException or SecurityException;
 }

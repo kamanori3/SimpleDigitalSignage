@@ -9,47 +9,49 @@ public class TrialMarkerResolverTests
   private static readonly DateOnly Later = new(2026, 8, 1);
 
   [Fact]
-  public void どちらも無ければ今日を採用し両方へ書く()
+  public void どれも無ければ今日を採用しすべてへ書く()
   {
-    var chosen = TrialMarkerResolver.Resolve(null, null, Today, out var writeRegistry, out var writeFile);
+    var chosen = TrialMarkerResolver.Resolve([null, null, null, null], Today, out var writeFlags);
     Assert.Equal(Today, chosen);
-    Assert.True(writeRegistry);
-    Assert.True(writeFile);
+    Assert.Equal([true, true, true, true], writeFlags);
   }
 
   [Fact]
-  public void レジストリだけあればそれを採用しファイルへ書く()
+  public void マシンレジストリだけあればそれを採用し他へ書く()
   {
-    var chosen = TrialMarkerResolver.Resolve(Earlier, null, Today, out var writeRegistry, out var writeFile);
+    var chosen = TrialMarkerResolver.Resolve([Earlier, null, null, null], Today, out var writeFlags);
     Assert.Equal(Earlier, chosen);
-    Assert.False(writeRegistry);
-    Assert.True(writeFile);
+    Assert.Equal([false, true, true, true], writeFlags);
   }
 
   [Fact]
-  public void ファイルだけあればそれを採用しレジストリへ書く()
+  public void ユーザーファイルだけあればそれを採用し他へ書く()
   {
-    var chosen = TrialMarkerResolver.Resolve(null, Earlier, Today, out var writeRegistry, out var writeFile);
+    var chosen = TrialMarkerResolver.Resolve([null, null, null, Earlier], Today, out var writeFlags);
     Assert.Equal(Earlier, chosen);
-    Assert.True(writeRegistry);
-    Assert.False(writeFile);
+    Assert.Equal([true, true, true, false], writeFlags);
   }
 
   [Fact]
-  public void 両方あり早い方を採用し遅い側へ書き戻す()
+  public void 複数あり早い方を採用し遅い側と欠け側へ書き戻す()
   {
-    var chosen = TrialMarkerResolver.Resolve(Later, Earlier, Today, out var writeRegistry, out var writeFile);
+    var chosen = TrialMarkerResolver.Resolve([Later, null, Earlier, Later], Today, out var writeFlags);
     Assert.Equal(Earlier, chosen);
-    Assert.True(writeRegistry);
-    Assert.False(writeFile);
+    Assert.Equal([true, true, false, true], writeFlags);
   }
 
   [Fact]
-  public void 両方同じなら書かない()
+  public void すべて同じなら書かない()
   {
-    var chosen = TrialMarkerResolver.Resolve(Earlier, Earlier, Today, out var writeRegistry, out var writeFile);
+    var chosen = TrialMarkerResolver.Resolve([Earlier, Earlier, Earlier, Earlier], Today, out var writeFlags);
     Assert.Equal(Earlier, chosen);
-    Assert.False(writeRegistry);
-    Assert.False(writeFile);
+    Assert.Equal([false, false, false, false], writeFlags);
+  }
+
+  [Fact]
+  public void ストアが空なら例外()
+  {
+    Assert.Throws<ArgumentException>(() =>
+      TrialMarkerResolver.Resolve(Array.Empty<DateOnly?>(), Today, out _));
   }
 }
