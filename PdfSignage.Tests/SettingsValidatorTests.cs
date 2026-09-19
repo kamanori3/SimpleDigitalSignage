@@ -13,8 +13,6 @@ public class SettingsValidatorTests
     int seconds = 15,
     bool appExitEnabled = false,
     string appExitTime = "18:00",
-    bool shutdownEnabled = false,
-    string shutdownTime = "18:03",
     string recoveryMessage = "表示を復旧しています",
     Func<string, DriveType>? getDriveType = null)
   {
@@ -23,8 +21,8 @@ public class SettingsValidatorTests
       watchFolder,
       allowNetwork,
       seconds,
-      appExitEnabled, appExitTime,
-      shutdownEnabled, shutdownTime,
+      appExitEnabled,
+      appExitTime,
       recoveryMessage,
       out error,
       getDriveType);
@@ -67,7 +65,6 @@ public class SettingsValidatorTests
   [Fact]
   public void 無効な終了時刻はチェックされない()
   {
-    // スケジュールを無効にしている場合、時刻欄の内容は問わない
     Assert.True(Validate(out _, appExitEnabled: false, appExitTime: "でたらめ"));
   }
 
@@ -75,14 +72,18 @@ public class SettingsValidatorTests
   public void 有効化した終了時刻の書式は検証される()
   {
     Assert.False(Validate(out var error, appExitEnabled: true, appExitTime: "18時"));
-    Assert.Contains("アプリ終了時刻", error);
+    Assert.Contains("終了時刻", error);
   }
 
-  [Fact]
-  public void 有効化した電源オフ時刻の書式は検証される()
+  [Theory]
+  [InlineData("18:00")]
+  [InlineData("9:05")]
+  [InlineData("00:00")]
+  [InlineData("23:59")]
+  public void 有効化した終了時刻の正常値は通る(string time)
   {
-    Assert.False(Validate(out var error, shutdownEnabled: true, shutdownTime: "24:00"));
-    Assert.Contains("PC 電源オフ時刻", error);
+    Assert.True(Validate(out var error, appExitEnabled: true, appExitTime: time));
+    Assert.Equal("", error);
   }
 
   [Fact]

@@ -91,5 +91,7 @@ public class SettingsService
     settings.AccessKey = string.IsNullOrWhiteSpace(settings.AccessKey)
       ? ""
       : settings.AccessKey.Trim();
+
+    SettingsMigration.UnifyLegacyExitTimes(settings);
   }
 }

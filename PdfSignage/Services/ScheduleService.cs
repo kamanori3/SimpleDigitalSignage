@@ -1,10 +1,9 @@
 using System.Windows.Threading;
-using PdfSignage.Models;
 
 namespace PdfSignage.Services;
 
 /// <summary>
-/// 日次のアプリ終了・PC 電源オフ時刻を監視するスケジューラ。
+/// 日次の運用終了時刻を監視するスケジューラ。
 /// 日付跨ぎも検知し、再生期限の再評価用に <see cref="DateRolledOver"/> を発火する。
 /// </summary>
 public sealed class ScheduleService : IDisposable
@@ -26,14 +25,37 @@ public sealed class ScheduleService : IDisposable
     _timer.Tick += OnTimerTick;
   }
 
-  public event Action? AppExitRequested;
-  public event Action? PcShutdownRequested;
+  public event Action? ExitRequested;
   public event Action? DateRolledOver;
 
   /// <summary>前回と今回の日付が異なれば true（スリープ越しの日付変更も含む）。</summary>
   public static bool HasDateChanged(DateOnly previousDate, DateOnly currentDate)
   {
     return currentDate != previousDate;
+  }
+
+  /// <summary>
+  /// 前回チェックから今回チェックの間に、指定時刻を跨いだかどうか。
+  /// 起動直後に当日の時刻を過ぎている場合は発火しない。
+  /// </summary>
+  public static bool CrossedScheduleTime(TimeSpan previous, TimeSpan current, TimeSpan scheduled)
+  {
+    if (previous <= current)
+    {
+      return previous < scheduled && current >= scheduled;
+    }
+
+    // 日付跨ぎ（例: 23:59 → 00:01）
+    return previous < scheduled || current >= scheduled;
+  }
+
+  /// <summary>
+  /// 設定された運用終了時刻を、前回〜今回のチェック間隔で跨いだか。
+  /// </summary>
+  public static bool ShouldRequestExit(string? appExitTime, TimeSpan previous, TimeSpan current)
+  {
+    return ScheduleTimeHelper.TryParseScheduleTime(appExitTime, out var scheduled)
+           && CrossedScheduleTime(previous, current, scheduled);
   }
 
   public void Start()
@@ -74,34 +96,13 @@ public sealed class ScheduleService : IDisposable
   {
     var settings = _context.Settings;
 
-    if (ScheduleTimeHelper.TryParseScheduleTime(settings.AppExitTime, out var appExitTime) &&
-        CrossedScheduleTime(previous, current, appExitTime))
+    if (!ShouldRequestExit(settings.AppExitTime, previous, current))
     {
-      _context.Logger.Info($"スケジュール: アプリ終了時刻（{settings.AppExitTime}）に到達しました。");
-      AppExitRequested?.Invoke();
+      return;
     }
 
-    if (ScheduleTimeHelper.TryParseScheduleTime(settings.PcShutdownTime, out var pcShutdownTime) &&
-        CrossedScheduleTime(previous, current, pcShutdownTime))
-    {
-      _context.Logger.Info($"スケジュール: PC 電源オフ時刻（{settings.PcShutdownTime}）に到達しました。");
-      PcShutdownRequested?.Invoke();
-    }
-  }
-
-  /// <summary>
-  /// 前回チェックから今回チェックの間に、指定時刻を跨いだかどうか。
-  /// 起動直後に当日の時刻を過ぎている場合は発火しない。
-  /// </summary>
-  private static bool CrossedScheduleTime(TimeSpan previous, TimeSpan current, TimeSpan scheduled)
-  {
-    if (previous <= current)
-    {
-      return previous < scheduled && current >= scheduled;
-    }
-
-    // 日付跨ぎ（例: 23:59 → 00:01）
-    return previous < scheduled || current >= scheduled;
+    _context.Logger.Info($"スケジュール: 終了時刻（{settings.AppExitTime}）に到達しました。");
+    ExitRequested?.Invoke();
   }
 
   private void LogActiveSchedule()
@@ -109,17 +110,10 @@ public sealed class ScheduleService : IDisposable
     var settings = _context.Settings;
     if (settings.AppExitTime is not null)
     {
-      _context.Logger.Info($"スケジュール監視: アプリ終了={settings.AppExitTime}");
+      _context.Logger.Info($"スケジュール監視: 終了（アプリ終了＋PC 電源オフ）={settings.AppExitTime}");
+      return;
     }
 
-    if (settings.PcShutdownTime is not null)
-    {
-      _context.Logger.Info($"スケジュール監視: PC 電源オフ={settings.PcShutdownTime}");
-    }
-
-    if (settings.AppExitTime is null && settings.PcShutdownTime is null)
-    {
-      _context.Logger.Info("スケジュール監視: 有効な時刻設定がありません。");
-    }
+    _context.Logger.Info("スケジュール監視: 有効な終了時刻はありません。");
   }
 }

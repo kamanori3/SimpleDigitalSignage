@@ -16,7 +16,7 @@
 - 設計書（`docs/設計書.md`）
 - 設計判断記録（`docs/adr/`）14 件（ADR 0009: 再生期限と入力誤り、ADR 0010: 6〜7 桁の桁落ち、ADR 0011: 壊れたファイルの通知、ADR 0012: 監視フォルダをこの PC 内に限定、ADR 0013: 試用開始日は PC 側に残す、ADR 0014: ログはこの PC の LocalAppData）
 - 課金方針と競合比較（`docs/課金方針.md`、`docs/競合比較.md`）
-- 純粋ロジックのユニットテストプロジェクト（`PdfSignage.Tests`、157 件）とソリューションファイル（`SimpleDigitalSignage.sln`）
+- 純粋ロジックのユニットテストプロジェクト（`PdfSignage.Tests`、188 件）とソリューションファイル（`SimpleDigitalSignage.sln`）
 - 操作ガイドのスライド版（`docs/操作ガイド.pptx`）と生成スクリプト（`scripts/build-operation-guide-pptx.ps1`）
 - オフライン課金。初回起動から暦日 60 日の試用、署名付きアクセスキー、期限切れ時は再生を止めずキオスク下端に案内。試用開始日は HKCU と LocalAppData に残す（ADR 0013）。発行は `PdfSignage.Issuer`（現場配布には含めない）
 - この変更履歴
@@ -30,6 +30,7 @@
 - 操作ガイド・運用ガイド・受け入れテスト・設計書に、試用・アクセスキー・期限切れ帯の操作と確認項目を追記
 - ログ出力先を監視フォルダの親から、この PC の `%LocalAppData%\PdfSignage\logs` へ移す（ADR 0014）。共有フォルダや USB を監視してもログは PC 側に残す
 - 製品名を「簡単！シンプル！サイネージ」にする。exe 名（`PdfSignage.exe`）は変えない
+- アプリ終了と PC 電源オフを分ける。スケジュールの終了時刻はアプリ終了と同時に電源オフする。管理画面では「アプリ終了」と「アプリを終了して PC を電源オフ」を選べる。× 閉じは表示モードに戻る。旧 `pcShutdownTime` は読み込み時に `appExitTime` へ統合する
 
 ### 修正
 

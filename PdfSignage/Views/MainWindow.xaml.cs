@@ -26,8 +26,8 @@ public partial class MainWindow : Window
   private bool _isAdminMode;
 
   /// <summary>
-  /// キオスク復帰のために管理画面を閉じるとき true。
-  /// × で閉じたとき（アプリ終了）と区別するために使う。
+  /// 表示モード復帰のために管理画面を閉じるとき true。
+  /// ボタンからの Close と × 閉じを区別するために使う。
   /// </summary>
   private bool _adminClosingForKioskReturn;
 
@@ -53,8 +53,7 @@ public partial class MainWindow : Window
 
     var context = ApplicationContext.Current!;
     _scheduleService = new ScheduleService(context);
-    _scheduleService.AppExitRequested += OnScheduledAppExit;
-    _scheduleService.PcShutdownRequested += OnScheduledPcShutdown;
+    _scheduleService.ExitRequested += OnScheduledExit;
     // 日付跨ぎで再生期限を再評価するため、次スライド境界でのリロードを予約する
     _scheduleService.DateRolledOver += OnDateRolledOver;
     _scheduleService.Start();
@@ -67,8 +66,7 @@ public partial class MainWindow : Window
   {
     if (_scheduleService is not null)
     {
-      _scheduleService.AppExitRequested -= OnScheduledAppExit;
-      _scheduleService.PcShutdownRequested -= OnScheduledPcShutdown;
+      _scheduleService.ExitRequested -= OnScheduledExit;
       _scheduleService.DateRolledOver -= OnDateRolledOver;
       _scheduleService.Dispose();
       _scheduleService = null;
@@ -76,7 +74,12 @@ public partial class MainWindow : Window
 
     _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
     StopVideoPlayback();
-    _adminWindow?.Close();
+    if (_adminWindow is not null)
+    {
+      _adminWindow.AllowClose = true;
+      _adminWindow.Close();
+      _adminWindow = null;
+    }
     _viewModel.Dispose();
     _kioskMode.Dispose();
   }
@@ -121,7 +124,8 @@ public partial class MainWindow : Window
     var adminViewModel = new AdminViewModel(context, _ => _viewModel.ApplySettings());
     _adminWindow = new AdminWindow(adminViewModel);
     _adminWindow.ReturnToKioskRequested += ExitAdminMode;
-    _adminWindow.ExitApplicationRequested += ExitApplication;
+    _adminWindow.ExitApplicationRequested += ExitApplicationFromAdmin;
+    _adminWindow.ExitAndPowerOffRequested += ExitAndPowerOffFromAdmin;
     _adminWindow.Closed += OnAdminWindowClosed;
     _adminWindow.Show();
 
@@ -182,8 +186,8 @@ public partial class MainWindow : Window
   }
 
   /// <summary>
-  /// 管理画面を閉じてキオスク表示に戻る。
-  /// × 閉じによる終了と区別するため、先に <see cref="_adminClosingForKioskReturn"/> を立てる。
+  /// 管理画面を閉じて表示モード（キオスク）に戻る。
+  /// × 閉じでもボタンでも、同じ復帰処理に集約する。
   /// </summary>
   private void ExitAdminMode()
   {
@@ -197,27 +201,21 @@ public partial class MainWindow : Window
 
     if (_adminWindow is not null)
     {
+      _adminWindow.AllowClose = true;
       DetachAdminWindowHandlers(_adminWindow);
       _adminWindow.Close();
       _adminWindow = null;
     }
 
     _adminClosingForKioskReturn = false;
-
-    _kioskMode.Activate(this);
-    Show();
-    Activate();
-    Keyboard.Focus(this);
-    _viewModel.RefreshLicenseBanner();
-    ApplicationContext.Current?.Logger.Info("キオスクモードに戻りました（Ctrl+Shift+M）。");
+    RestoreKioskDisplay();
   }
 
   /// <summary>
-  /// 管理画面の × で閉じたとき。キオスク復帰ではなくアプリ終了とする。
+  /// 管理画面の × で閉じたとき。表示モードに戻る。
   /// </summary>
   private void OnAdminWindowClosed(object? sender, EventArgs e)
   {
-    // ExitAdminMode からの Close ではここを通しても終了しない
     if (_adminClosingForKioskReturn || sender is not AdminWindow adminWindow)
     {
       return;
@@ -235,22 +233,76 @@ public partial class MainWindow : Window
     }
 
     _isAdminMode = false;
-    ExitApplication();
+    RestoreKioskDisplay();
+  }
+
+  private void RestoreKioskDisplay()
+  {
+    _kioskMode.Activate(this);
+    Show();
+    Activate();
+    Keyboard.Focus(this);
+    _viewModel.RefreshLicenseBanner();
+    ApplicationContext.Current?.Logger.Info("表示モードに戻りました。");
   }
 
   private void DetachAdminWindowHandlers(AdminWindow adminWindow)
   {
     adminWindow.ReturnToKioskRequested -= ExitAdminMode;
-    adminWindow.ExitApplicationRequested -= ExitApplication;
+    adminWindow.ExitApplicationRequested -= ExitApplicationFromAdmin;
+    adminWindow.ExitAndPowerOffRequested -= ExitAndPowerOffFromAdmin;
     adminWindow.Closed -= OnAdminWindowClosed;
   }
 
-  /// <summary>管理画面の「アプリを終了」から呼ばれる。</summary>
-  private void ExitApplication()
+  private void ExitApplicationFromAdmin()
+  {
+    ExitApplication("管理モード");
+  }
+
+  private void ExitAndPowerOffFromAdmin()
+  {
+    ExitAndPowerOff("管理モード");
+  }
+
+  /// <summary>管理画面の「アプリ終了」。PC は落とさない。</summary>
+  private void ExitApplication(string reason)
   {
     _isAdminMode = false;
-    ApplicationContext.Current?.Logger.Info("アプリを終了します（管理モード）。");
-    Application.Current.Shutdown();
+    if (_adminWindow is not null)
+    {
+      _adminWindow.AllowClose = true;
+    }
+
+    var logger = ApplicationContext.Current?.Logger;
+    if (logger is null)
+    {
+      Application.Current.Shutdown();
+      return;
+    }
+
+    AppExit.ExitProcess(logger, reason, () => Application.Current.Shutdown());
+  }
+
+  /// <summary>
+  /// 運用終了。PC 電源オフを要求してからアプリを終了する。
+  /// 自己再起動や二重起動では使わない。
+  /// </summary>
+  private void ExitAndPowerOff(string reason)
+  {
+    _isAdminMode = false;
+    if (_adminWindow is not null)
+    {
+      _adminWindow.AllowClose = true;
+    }
+
+    var logger = ApplicationContext.Current?.Logger;
+    if (logger is null)
+    {
+      Application.Current.Shutdown();
+      return;
+    }
+
+    AppExit.Execute(logger, reason, () => Application.Current.Shutdown());
   }
 
   /// <summary>
@@ -263,19 +315,9 @@ public partial class MainWindow : Window
     _viewModel.RequestPlaylistReload();
   }
 
-  private void OnScheduledAppExit()
+  private void OnScheduledExit()
   {
-    ApplicationContext.Current?.Logger.Info("スケジュールによりアプリを終了します。");
-    Application.Current.Shutdown();
-  }
-
-  private void OnScheduledPcShutdown()
-  {
-    var logger = ApplicationContext.Current?.Logger;
-    if (logger is not null)
-    {
-      PcShutdownService.TryShutdown(logger);
-    }
+    ExitAndPowerOff("スケジュール");
   }
 
   /// <summary>

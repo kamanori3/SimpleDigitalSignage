@@ -22,8 +22,6 @@ public sealed class AdminViewModel : ViewModelBase
   private bool _windowsAutoStart;
   private bool _appExitTimeEnabled;
   private string _appExitTime = "";
-  private bool _pcShutdownTimeEnabled;
-  private string _pcShutdownTime = "";
   private string _recoveryMessage = "";
   private string _accessKeyInput = "";
   private string _licenseStatusText = "";
@@ -31,8 +29,6 @@ public sealed class AdminViewModel : ViewModelBase
   private string _logDirectory = "";
   private string _statusMessage = "";
   private bool _hasValidationError;
-  private bool _pcShutdownUsesDefault = true;
-  private bool _isApplyingDefaultPcShutdown;
 
   public AdminViewModel(ApplicationContext context, Action<AppSettings> applySettings)
   {
@@ -46,10 +42,12 @@ public sealed class AdminViewModel : ViewModelBase
     ApplyAccessKeyCommand = new RelayCommand(ApplyAccessKey);
     ReturnToKioskCommand = new RelayCommand(RequestReturnToKiosk);
     ExitApplicationCommand = new RelayCommand(RequestExitApplication);
+    ExitAndPowerOffCommand = new RelayCommand(RequestExitAndPowerOff);
   }
 
   public event Action? ReturnToKioskRequested;
   public event Action? ExitApplicationRequested;
+  public event Action? ExitAndPowerOffRequested;
 
   public string WindowTitle { get; } =
     $"{PdfSignage.AppInfo.ProductName}　ver.{FormatVersionLabel()} - 管理モード";
@@ -75,49 +73,13 @@ public sealed class AdminViewModel : ViewModelBase
   public bool AppExitTimeEnabled
   {
     get => _appExitTimeEnabled;
-    set
-    {
-      if (SetProperty(ref _appExitTimeEnabled, value) && value && _pcShutdownUsesDefault && PcShutdownTimeEnabled)
-      {
-        ApplyDefaultPcShutdownTime();
-      }
-    }
+    set => SetProperty(ref _appExitTimeEnabled, value);
   }
 
   public string AppExitTime
   {
     get => _appExitTime;
-    set
-    {
-      if (SetProperty(ref _appExitTime, value) && _pcShutdownUsesDefault && PcShutdownTimeEnabled)
-      {
-        ApplyDefaultPcShutdownTime();
-      }
-    }
-  }
-
-  public bool PcShutdownTimeEnabled
-  {
-    get => _pcShutdownTimeEnabled;
-    set
-    {
-      if (SetProperty(ref _pcShutdownTimeEnabled, value) && value)
-      {
-        ApplyDefaultPcShutdownTime();
-      }
-    }
-  }
-
-  public string PcShutdownTime
-  {
-    get => _pcShutdownTime;
-    set
-    {
-      if (SetProperty(ref _pcShutdownTime, value) && !_isApplyingDefaultPcShutdown)
-      {
-        _pcShutdownUsesDefault = false;
-      }
-    }
+    set => SetProperty(ref _appExitTime, value);
   }
 
   public string RecoveryMessage
@@ -178,6 +140,7 @@ public sealed class AdminViewModel : ViewModelBase
   public ICommand ApplyAccessKeyCommand { get; }
   public ICommand ReturnToKioskCommand { get; }
   public ICommand ExitApplicationCommand { get; }
+  public ICommand ExitAndPowerOffCommand { get; }
 
   private void LoadFromSettings(AppSettings settings)
   {
@@ -187,38 +150,11 @@ public sealed class AdminViewModel : ViewModelBase
     WindowsAutoStart = settings.WindowsAutoStart;
     AppExitTimeEnabled = !string.IsNullOrWhiteSpace(settings.AppExitTime);
     AppExitTime = settings.AppExitTime ?? "18:00";
-    PcShutdownTimeEnabled = !string.IsNullOrWhiteSpace(settings.PcShutdownTime);
-
-    if (settings.PcShutdownTime is not null)
-    {
-      _isApplyingDefaultPcShutdown = true;
-      PcShutdownTime = settings.PcShutdownTime;
-      _isApplyingDefaultPcShutdown = false;
-      _pcShutdownUsesDefault = false;
-    }
-    else
-    {
-      ApplyDefaultPcShutdownTime();
-    }
-
     RecoveryMessage = settings.RecoveryMessage;
     AccessKeyInput = settings.AccessKey;
     StatusMessage = "";
     HasValidationError = false;
     RefreshLicenseUi();
-  }
-
-  private void ApplyDefaultPcShutdownTime()
-  {
-    if (!SettingsValidator.IsValidTime(AppExitTime))
-    {
-      return;
-    }
-
-    _isApplyingDefaultPcShutdown = true;
-    PcShutdownTime = ScheduleTimeHelper.GetDefaultPcShutdownTime(AppExitTime);
-    _isApplyingDefaultPcShutdown = false;
-    _pcShutdownUsesDefault = true;
   }
 
   private void BrowseWatchFolder()
@@ -273,7 +209,7 @@ public sealed class AdminViewModel : ViewModelBase
 
   private void RequestReturnToKiosk()
   {
-    if (!ConfirmUnsavedChangesBeforeProceed())
+    if (!TryConfirmLeaveAdmin())
     {
       return;
     }
@@ -283,12 +219,54 @@ public sealed class AdminViewModel : ViewModelBase
 
   private void RequestExitApplication()
   {
-    if (!ConfirmUnsavedChangesBeforeProceed())
+    if (!TryConfirmLeaveAdmin())
+    {
+      return;
+    }
+
+    var result = MessageBox.Show(
+      "アプリを終了します。PC の電源は切れません。よろしいですか？",
+      "終了の確認",
+      MessageBoxButton.YesNo,
+      MessageBoxImage.Question,
+      MessageBoxResult.No);
+
+    if (result != MessageBoxResult.Yes)
     {
       return;
     }
 
     ExitApplicationRequested?.Invoke();
+  }
+
+  private void RequestExitAndPowerOff()
+  {
+    if (!TryConfirmLeaveAdmin())
+    {
+      return;
+    }
+
+    var result = MessageBox.Show(
+      "アプリを終了すると、すぐに PC の電源も切れます。よろしいですか？",
+      "終了の確認",
+      MessageBoxButton.YesNo,
+      MessageBoxImage.Warning,
+      MessageBoxResult.No);
+
+    if (result != MessageBoxResult.Yes)
+    {
+      return;
+    }
+
+    ExitAndPowerOffRequested?.Invoke();
+  }
+
+  /// <summary>
+  /// 未保存の確認。表示モードへ戻る・× 閉じから使う。
+  /// </summary>
+  public bool TryConfirmLeaveAdmin()
+  {
+    return ConfirmUnsavedChangesBeforeProceed();
   }
 
   private bool ConfirmUnsavedChangesBeforeProceed()
@@ -384,8 +362,6 @@ public sealed class AdminViewModel : ViewModelBase
           defaultDisplaySeconds,
           AppExitTimeEnabled,
           AppExitTime,
-          PcShutdownTimeEnabled,
-          PcShutdownTime,
           RecoveryMessage,
           out var errorMessage))
     {
@@ -400,9 +376,6 @@ public sealed class AdminViewModel : ViewModelBase
     settings.WindowsAutoStart = WindowsAutoStart;
     settings.AppExitTime = AppExitTimeEnabled
       ? SettingsValidator.NormalizeTime(AppExitTime)
-      : null;
-    settings.PcShutdownTime = PcShutdownTimeEnabled
-      ? SettingsValidator.NormalizeTime(PcShutdownTime)
       : null;
     settings.RecoveryMessage = RecoveryMessage.Trim();
     settings.AccessKey = string.IsNullOrWhiteSpace(AccessKeyInput)
@@ -458,7 +431,6 @@ public sealed class AdminViewModel : ViewModelBase
            && left.DefaultDisplaySeconds == right.DefaultDisplaySeconds
            && left.WindowsAutoStart == right.WindowsAutoStart
            && left.AppExitTime == right.AppExitTime
-           && left.PcShutdownTime == right.PcShutdownTime
            && left.RecoveryMessage == right.RecoveryMessage
            && left.AccessKey == right.AccessKey;
   }
@@ -472,7 +444,6 @@ public sealed class AdminViewModel : ViewModelBase
       DefaultDisplaySeconds = source.DefaultDisplaySeconds,
       WindowsAutoStart = source.WindowsAutoStart,
       AppExitTime = source.AppExitTime,
-      PcShutdownTime = source.PcShutdownTime,
       RecoveryMessage = source.RecoveryMessage,
       AccessKey = source.AccessKey
     };

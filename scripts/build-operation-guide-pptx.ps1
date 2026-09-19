@@ -606,8 +606,7 @@ try {
         @('監視フォルダ', 'コンテンツを置くフォルダのパス。「参照…」から選択も可能') `
         @('デフォルト表示秒数', '画像・PDF の標準表示時間（5〜300 秒）') `
         @('Windows 起動時に自動起動', 'ON にすると PC 起動・ログオン後にアプリが自動で立ち上がる') `
-        @('アプリ終了時刻', '毎日、指定時刻にアプリを終了する（例：18:00）。無効にすれば終了しない') `
-        @('PC 電源オフ時刻', '毎日、指定時刻に PC の電源を切る（例：18:03）。無効にすれば電源オフしない') `
+        @('終了時刻', '毎日、指定時刻にアプリを終了し、直ちに PC の電源を切る（例：18:00）。無効にすれば終了しない') `
         @('復帰不能時メッセージ', 'すべてのファイルが表示できないときに全画面へ出す文言')
     [void](Add-StyledTable -Slide $s -Data $d -L $ML -T 146 -ColWidth @(252, 580) -HeaderHeight 34 -RowHeight 42 -BoldFirstColumn -BodySize 12)
     Add-Callout -Slide $s -Label '時刻の入力形式' -Text 'HH:mm（24 時間制）で入力します。午後 6 時は 18:00、午前 9 時 30 分は 09:30。ライセンス・アクセスキー・ログフォルダは次のスライド。' `
@@ -644,16 +643,15 @@ try {
     $ty = 250.0
     [void](New-Box -Slide $s -L ($ML + 40) -T ($ty + 30) -W ($CW - 80) -H 2 -Fill $C.Border)
     $nodes = @(
-        @('18:00', 'アプリ終了', 'サイネージ表示を終了'),
-        @('18:03', 'PC 電源オフ', '任意。無効にもできる'),
+        @('18:00', '終了して電源オフ', 'アプリ終了と同時に PC を落とす'),
         @('翌朝', 'PC 起動・ログオン', '出勤時や電源スケジュールで'),
         @('自動', 'サイネージ開始', 'Windows 自動起動が ON なら')
     )
     $nx = $ML
-    $nw = ($CW - 3 * 16) / 4
+    $nw = ($CW - 2 * 16) / 3
     $i = 0
     foreach ($nd in $nodes) {
-        $isNight = ($i -lt 2)
+        $isNight = ($i -lt 1)
         $col = $(if ($isNight) { $C.Accent } else { $C.Teal })
         $soft = $(if ($isNight) { $C.AccentSoft } else { $C.TealSoft })
         [void](Add-Text -Slide $s -Text $nd[0] -L $nx -T ($ty - 34) -W $nw -H 24 -Size 17 -Bold -Color $col -Align 2)
@@ -665,7 +663,7 @@ try {
         $i++
     }
 
-    Add-Callout -Slide $s -Label '補足' -Text 'アプリ終了時刻を有効にすると、PC 電源オフの初期値はその 3 分後になります（変更可）。電源オフに失敗した場合はログに記録されるため、社内の PC 管理ポリシーを確認してください。' `
+    Add-Callout -Slide $s -Label '補足' -Text '終了時刻と「アプリを終了して PC を電源オフ」は、アプリ終了と同時に PC を落とします。「アプリ終了」はアプリだけ止めます。× 閉じは表示モードに戻ります。電源オフに失敗した場合はログを確認してください。' `
         -L $ML -T 428 -W $CW -H 60 -Fill $C.Surface -Accent $C.Muted -Size 12.5
 
     # ------------------------------------------- 12. 管理者：終了とログ ---
@@ -676,9 +674,9 @@ try {
     [void](Add-Text -Slide $s -Text 'アプリを終了する' -L ($ML + 26) -T ($ContentTop + 30) -W 352 -H 28 -Size 19 -Bold -Color $C.Ink)
     $ey = $ContentTop + 76
     $exits = @(
-        @('管理画面から', 'Ctrl ＋ Shift ＋ M →「アプリを終了」'),
-        @('管理画面を閉じる', '管理画面の × ボタンで閉じるとアプリも終了'),
-        @('スケジュール', '設定した終了時刻に到達すると自動で終了')
+        @('表示モードに戻る', '「表示モードに戻る」、×、または Ctrl＋Shift＋M'),
+        @('アプリだけ終了', '管理画面の「アプリ終了」（PC の電源は切れない）'),
+        @('終了して電源オフ', '「アプリを終了して PC を電源オフ」または終了時刻')
     )
     foreach ($e in $exits) {
         [void](Add-Text -Slide $s -Text $e[0] -L ($ML + 26) -T $ey -W 352 -H 20 -Size 13 -Bold -Color $C.Accent)
@@ -742,9 +740,9 @@ try {
     $d = New-TableData `
         @('やりたいこと', '操作') `
         @('設定を変更', 'Ctrl＋Shift＋M →変更→「保存して設定する」') `
-        @('キオスクに戻る', '「通常モード（キオスク）に戻る」または Ctrl＋Shift＋M') `
-        @('アプリを終了', '管理画面の「アプリを終了」') `
-        @('夜に止めて朝始める', 'アプリ終了時刻・PC 電源オフ時刻＋自動起動を ON') `
+        @('キオスクに戻る', '「表示モードに戻る」または Ctrl＋Shift＋M') `
+        @('アプリを終了', '管理画面の「アプリ終了」') `
+        @('夜に止めて朝始める', '終了時刻＋自動起動を ON') `
         @('アクセスキーを入れる', '貼り付け →「アクセスキーを適用」') `
         @('ログの場所を確認', '管理画面の「ログフォルダ」')
     [void](Add-StyledTable -Slide $s -Data $d -L $rl -T 184 -ColWidth @(150, 254) -HeaderHeight 32 -RowHeight 36 -Accent $C.Accent -BodySize 11 -HeaderSize 12 -BoldFirstColumn)

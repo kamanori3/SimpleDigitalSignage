@@ -17,8 +17,6 @@ public static partial class SettingsValidator
     int defaultDisplaySeconds,
     bool appExitTimeEnabled,
     string appExitTime,
-    bool pcShutdownTimeEnabled,
-    string pcShutdownTime,
     string recoveryMessage,
     out string errorMessage,
     Func<string, DriveType>? getDriveType = null)
@@ -45,13 +43,7 @@ public static partial class SettingsValidator
 
     if (appExitTimeEnabled && !IsValidTime(appExitTime))
     {
-      errorMessage = "アプリ終了時刻は HH:mm 形式（例: 18:00）で入力してください。";
-      return false;
-    }
-
-    if (pcShutdownTimeEnabled && !IsValidTime(pcShutdownTime))
-    {
-      errorMessage = "PC 電源オフ時刻は HH:mm 形式（例: 22:00）で入力してください。";
+      errorMessage = "終了時刻は HH:mm 形式（例: 18:00）で入力してください。";
       return false;
     }
 

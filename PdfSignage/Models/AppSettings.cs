@@ -21,10 +21,14 @@ public class AppSettings
 
   public bool WindowsAutoStart { get; set; } = false;
 
-  /// <summary>日次アプリ終了時刻（HH:mm）。未設定時は null。</summary>
+  /// <summary>
+  /// 日次の運用終了時刻（HH:mm）。到達時にアプリを終了し、直ちに PC を電源オフする。未設定時は null。
+  /// </summary>
   public string? AppExitTime { get; set; }
 
-  /// <summary>日次 PC 電源オフ時刻（HH:mm）。未設定時は null。</summary>
+  /// <summary>
+  /// 旧バージョンの日次 PC 電源オフ時刻。読み込み後に null へ統合する。
+  /// </summary>
   public string? PcShutdownTime { get; set; }
 
   public string RecoveryMessage { get; set; } = "表示を復旧しています";
