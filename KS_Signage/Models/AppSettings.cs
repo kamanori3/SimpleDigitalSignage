@@ -1,0 +1,40 @@
+namespace KS_Signage.Models;
+
+/// <summary>
+/// アプリケーション設定（settings.json に永続化）
+/// </summary>
+public class AppSettings
+{
+  public const int MinDisplaySeconds = 5;
+  public const int MaxDisplaySeconds = 300;
+  public const int DefaultDisplaySecondsValue = 15;
+
+  public string WatchFolderPath { get; set; } = "D:\\Signage";
+
+  /// <summary>
+  /// true のときだけ UNC / ネットワークドライブを監視フォルダにできる。
+  /// 既定 false（スタンドアロン商品）。管理画面からは変更しない。
+  /// </summary>
+  public bool AllowNetworkWatchFolder { get; set; }
+
+  public int DefaultDisplaySeconds { get; set; } = DefaultDisplaySecondsValue;
+
+  public bool WindowsAutoStart { get; set; } = false;
+
+  /// <summary>
+  /// 日次の運用終了時刻（HH:mm）。到達時にアプリを終了し、直ちに PC を電源オフする。未設定時は null。
+  /// </summary>
+  public string? AppExitTime { get; set; }
+
+  /// <summary>
+  /// 旧バージョンの日次 PC 電源オフ時刻。読み込み後に null へ統合する。
+  /// </summary>
+  public string? PcShutdownTime { get; set; }
+
+  public string RecoveryMessage { get; set; } = "表示を復旧しています";
+
+  /// <summary>
+  /// 署名付きアクセスキー。未入力は空文字。試用開始日はここには置かない（ADR 0013）。
+  /// </summary>
+  public string AccessKey { get; set; } = "";
+}
